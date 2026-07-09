@@ -1,14 +1,14 @@
 {
   "cli": {
-    "version": ">= 5.9.1"
+    "version": ">= 5.9.1",
+    "installCommand": "npm install"
   },
   "build": {
     "Preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      },
-      "installCommand": "npm install"
+      }
     },
     "production": {
       "android": {
