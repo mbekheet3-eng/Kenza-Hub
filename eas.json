@@ -1,11 +1,9 @@
 {
   "cli": {
-    "version": ">= 5.9.1",
-    "installCommand": "npm install"
+    "version": ">= 5.9.1"
   },
   "build": {
-    "Preview": {
-      "distribution": "internal",
+    "preview": {
       "android": {
         "buildType": "apk"
       }
