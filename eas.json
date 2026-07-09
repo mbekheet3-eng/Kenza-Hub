@@ -1,8 +1,4 @@
 {
-  "cli": {
-    "version": ">= 5.9.1",
-    "installCommand": "npm install"
-  },
   "build": {
     "preview": {
       "distribution": "internal",
@@ -10,10 +6,6 @@
         "buildType": "apk"
       }
     },
-    "production": {
-      "android": {
-        "buildType": "apk"
-      }
-    }
+    "production": {}
   }
 }
