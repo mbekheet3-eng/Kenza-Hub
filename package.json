@@ -1,4 +1,6 @@
 {
+  "name": "kenza-hub",
+  "version": "1.0.0",
   "license": "0BSD",
   "main": "index.js",
   "scripts": {
@@ -10,12 +12,14 @@
   "dependencies": {
     "expo": "~54.0.35",
     "expo-status-bar": "~3.0.9",
-    "react": "19.1.0",
-    "react-native": "0.81.5",
+    "expo-image-picker": "~17.0.11",
+    "react": "19.0.0",
+    "react-native": "0.76.9",
     "@expo/vector-icons": "^15.0.3",
-    "react-native-paper": "4.9.2",
-    "@supabase/supabase-js": "*",
-    "expo-image-picker": "~17.0.11"
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
   },
   "private": true
 }
