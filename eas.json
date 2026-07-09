@@ -3,7 +3,7 @@
     "version": ">= 5.9.1"
   },
   "build": {
-    "preview": {
+    "Preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
