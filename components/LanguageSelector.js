@@ -60,11 +60,11 @@ export default function LanguageSelector({
 }
 
 const styles = StyleSheet.create({
-  topBar: {
+topBar: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 4,
+    paddingBottom: 16,   // ← بقى 16 بدل 4
   },
   langSelector: {
     alignItems: 'center',
