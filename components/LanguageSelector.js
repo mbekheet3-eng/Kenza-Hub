@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   topBar: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 16,
-    paddingTop: 28,
+    paddingTop: 16,
     paddingBottom: 4,
   },
   langSelector: {
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 24,
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
   },
   langFlag: { fontSize: 18, marginRight: 6 },
   langText: { fontSize: 14, color: COLORS.navy, fontWeight: '600', marginHorizontal: 4 },
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   langMenu: {
     position: 'absolute',
     top: 62,
-    right: 16,
+    left: 16,
     backgroundColor: COLORS.white,
     borderRadius: 14,
     paddingVertical: 6,
