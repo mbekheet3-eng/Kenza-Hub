@@ -6,7 +6,11 @@
   "build": {
     "Preview": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_NO_TELEMETRY": "1"
       }
     }
   }
