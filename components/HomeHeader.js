@@ -35,7 +35,7 @@ export default function HomeHeader({
           </Text>
 
           <Text style={styles.subtitle}>
-            اكتشف أفضل الملابس المستعملة في مصر
+           اكتشف برانداتك المفضلة... بأسعار مميزة وفرص جديدة كل يوم
           </Text>
         </View>
 
