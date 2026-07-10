@@ -4,11 +4,14 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "Preview": {
+    "preview": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       },
-      "node": "20.18.0"
+      "env": {
+        "EXPO_NO_TELEMETRY": "1"
+      }
     }
   }
 }
