@@ -35,7 +35,7 @@ function RetryImage({ uri, style }) {
 
 export default function HeroCarousel() {
   const scrollAnim1 = useRef(new Animated.Value(0)).current;
-  const scrollAnim2 = useRef(new Animated.Value(0)).current;
+  const scrollAnim2 = useRef(new Animated.Value(-SCROLL_WIDTH)).current;
 
   useEffect(() => {
     const animate = () => {
@@ -51,9 +51,9 @@ export default function HeroCarousel() {
 
   useEffect(() => {
     const animate = () => {
-      scrollAnim2.setValue(0);
+      scrollAnim2.setValue(-SCROLL_WIDTH);
       Animated.timing(scrollAnim2, {
-        toValue: SCROLL_WIDTH,
+        toValue: 0,
         duration: 30000,
         useNativeDriver: true,
       }).start(() => animate());
