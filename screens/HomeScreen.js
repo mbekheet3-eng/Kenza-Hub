@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '../theme/colors';
-import HomeHeader from '../components/HomeHeader';
-import CategoryTabs from '../components/CategoryTabs';
-import ProductGrid, { MOCK_PRODUCTS } from '../components/ProductGrid';
-import BottomNav from '../components/BottomNav';
+
+import HomeHeader from '../components/common/HomeHeader';
+import CategoryTabs from '../components/home/CategoryTabs';
+import ProductGrid, { MOCK_PRODUCTS } from '../components/product/ProductGrid';
+import BottomNav from '../components/common/BottomNav';
+
 import { supabase } from '../services/supabase';
 
 export default function HomeScreen({
@@ -13,6 +15,7 @@ export default function HomeScreen({
   onNavigateSell,
   onNavigateProfile,
   onNavigateChats,
+  navigateTo,
   user,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -108,6 +111,7 @@ export default function HomeScreen({
           user={user}
           searchQuery={searchQuery}
           onSearch={setSearchQuery}
+          navigateTo={navigateTo}
         />
 
         <CategoryTabs
@@ -150,10 +154,7 @@ const styles = StyleSheet.create({
 
   topSection: {
     backgroundColor: COLORS.white,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-    marginBottom: 6,
+    paddingBottom: 10,
   },
 
   gridSection: {
