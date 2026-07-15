@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,145 +15,207 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../theme/colors';
 import { supabase } from '../services/supabase';
+import { uploadMultipleImages } from '../services/uploadService';
+import BRANDS from '../data/brands';
 
-const LABELS = {
-  ar: {
-    title: 'بيع منتج',
-    back: 'رجوع',
-    addPhoto: 'أضف صورة',
-    changePhoto: 'غير الصورة',
-    productName: 'اسم المنتج',
-    productNamePlaceholder: 'مثال: جاكيت جينز أزرق',
-    price: 'السعر (ج.م)',
-    pricePlaceholder: 'مثال: 250',
-    category: 'الفئة',
-    condition: 'الحالة',
-    description: 'الوصف',
-    descriptionPlaceholder: 'اوصف المنتج بالتفصيل...',
-    publish: 'انشر المنتج',
-    fillAll: 'من فضلك اكمل كل الحقول',
-    addPhotoFirst: 'من فضلك أضف صورة للمنتج',
-    success: 'تم نشر المنتج بنجاح',
-    successMsg: 'المنتج اتضاف لقاعدة البيانات',
-    loginRequired: 'لازم تسجل دخول عشان تبيع',
-    categories: ['سيدات', 'رجال', 'أطفال'],
-    categoryKeys: ['women', 'men', 'kids'],
-    conditions: ['جديد', 'ممتاز', 'كويس', 'مقبول'],
-    conditionKeys: ['new', 'excellent', 'good', 'fair'],
-  },
-  en: {
-    title: 'Sell an Item',
-    back: 'Back',
-    addPhoto: 'Add Photo',
-    changePhoto: 'Change Photo',
-    productName: 'Product Name',
-    productNamePlaceholder: 'e.g. Blue Denim Jacket',
-    price: 'Price (EGP)',
-    pricePlaceholder: 'e.g. 250',
-    category: 'Category',
-    condition: 'Condition',
-    description: 'Description',
-    descriptionPlaceholder: 'Describe your item in detail...',
-    publish: 'Publish Item',
-    fillAll: 'Please fill all fields',
-    addPhotoFirst: 'Please add a photo of your item',
-    success: 'Item published successfully',
-    successMsg: 'Product added to database',
-    loginRequired: 'You need to log in to sell',
-    categories: ['Women', 'Men', 'Kids'],
-    categoryKeys: ['women', 'men', 'kids'],
-    conditions: ['New', 'Excellent', 'Good', 'Fair'],
-    conditionKeys: ['new', 'excellent', 'good', 'fair'],
-  },
-  fr: {
-    title: 'Vendre un article',
-    back: 'Retour',
-    addPhoto: 'Ajouter une photo',
-    changePhoto: 'Changer la photo',
-    productName: "Nom de l'article",
-    productNamePlaceholder: 'ex. Veste en jean bleue',
-    price: 'Prix (EGP)',
-    pricePlaceholder: 'ex. 250',
-    category: 'Catégorie',
-    condition: 'État',
-    description: 'Description',
-    descriptionPlaceholder: "Décrivez votre article en détail...",
-    publish: "Publier l'article",
-    fillAll: 'Veuillez remplir tous les champs',
-    addPhotoFirst: 'Veuillez ajouter une photo de votre article',
-    success: 'Article publié avec succès',
-    successMsg: 'Produit ajouté à la base de données',
-    loginRequired: 'Vous devez vous connecter pour vendre',
-    categories: ['Femmes', 'Hommes', 'Enfants'],
-    categoryKeys: ['women', 'men', 'kids'],
-    conditions: ['Neuf', 'Excellent', 'Bon', 'Acceptable'],
-    conditionKeys: ['new', 'excellent', 'good', 'fair'],
-  },
+const MAX_IMAGES = 5;
+
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'مقاس حر'];
+const COLORS_LIST = [
+  'أسود', 'أبيض', 'رمادي', 'أزرق', 'كحلي', 'أحمر',
+  'وردي', 'بنفسجي', 'أخضر', 'أصفر', 'بني', 'بيج',
+];
+const POPULAR_BRANDS = BRANDS.filter((b) => b.popular);
+
+const L = {
+  title: 'بيع منتج',
+  addPhotos: 'أضف صور',
+  fromCamera: 'كاميرا',
+  fromGallery: 'معرض الصور',
+  productName: 'اسم المنتج',
+  productNamePlaceholder: 'مثال: جاكيت جينز أزرق',
+  price: 'السعر (ج.م)',
+  pricePlaceholder: 'مثال: 250',
+  category: 'الفئة',
+  condition: 'الحالة',
+  size: 'المقاس (اختياري)',
+  color: 'اللون (اختياري)',
+  brand: 'البراند (اختياري)',
+  description: 'الوصف',
+  descriptionPlaceholder: 'اوصف المنتج بالتفصيل...',
+  publish: 'انشر المنتج',
+  fillAll: 'من فضلك اكمل اسم المنتج والسعر والفئة والحالة',
+  addPhotoFirst: 'من فضلك أضف صورة واحدة على الأقل',
+  success: 'تم نشر المنتج بنجاح',
+  successMsg: 'المنتج اتضاف لقاعدة البيانات',
+  loginRequired: 'لازم تسجل دخول عشان تبيع',
+  conditions: ['جديد', 'ممتاز', 'كويس', 'مقبول'],
+  maxImagesMsg: 'أقصى عدد صور ' + MAX_IMAGES,
+  cameraPermission: 'محتاجين إذن الكاميرا عشان تصور المنتج',
+  galleryPermission: 'محتاجين إذن الوصول للصور',
 };
 
-export default function SellScreen({ lang = 'ar', onBack, user }) {
-  const isRTL = lang === 'ar';
-  const l = LABELS[lang];
+export default function SellScreen({ onBack, user }) {
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCondition, setSelectedCondition] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [description, setDescription] = useState('');
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [imageUri, setImageUri] = useState(null);
 
-  const pickImage = async () => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id, name_ar, name_en');
+
+    if (error) {
+      console.log('fetchCategories error:', error.message);
+      Alert.alert('خطأ', 'مش قادرين نجيب الفئات دلوقتي');
+    } else {
+      setCategories(data || []);
+    }
+    setLoadingCategories(false);
+  };
+
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('', L.cameraPermission);
+      return false;
+    }
+    return true;
+  };
+
+  const requestGalleryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('', L.galleryPermission);
+      return false;
+    }
+    return true;
+  };
+
+  const addImageUri = (uri) => {
+    setImages((prev) => [...prev, uri]);
+  };
+
+  const pickFromCamera = async () => {
+    if (images.length >= MAX_IMAGES) {
+      Alert.alert('', L.maxImagesMsg);
+      return;
+    }
+    const ok = await requestCameraPermission();
+    if (!ok) return;
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('', 'محتاجين إذن الوصول للصور');
-        return;
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        addImageUri(result.assets[0].uri);
       }
+    } catch (e) {
+      Alert.alert('خطأ', 'مش قادر يفتح الكاميرا');
+    }
+  };
+
+  const pickFromGallery = async () => {
+    if (images.length >= MAX_IMAGES) {
+      Alert.alert('', L.maxImagesMsg);
+      return;
+    }
+    const ok = await requestGalleryPermission();
+    if (!ok) return;
+    try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.8,
+        quality: 0.7,
       });
-      if (!result.canceled) {
-        setImageUri(result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        addImageUri(result.assets[0].uri);
       }
-    } catch {
-      Alert.alert('خطأ', 'مش قادر يفتح الصور');
+    } catch (e) {
+      Alert.alert('خطأ', 'مش قادر يفتح معرض الصور');
     }
+  };
+
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePublish = async () => {
     if (!user) {
-      Alert.alert('', l.loginRequired);
+      Alert.alert('', L.loginRequired);
       return;
     }
-    if (!imageUri) {
-      Alert.alert('', l.addPhotoFirst);
+    if (images.length === 0) {
+      Alert.alert('', L.addPhotoFirst);
       return;
     }
-    if (!productName || !price || selectedCategory === null || selectedCondition === null) {
-      Alert.alert('', l.fillAll);
+    if (!productName.trim() || !price || !selectedCategoryId || !selectedCondition) {
+      Alert.alert('', L.fillAll);
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('products').insert({
-        title: productName,
-        price: parseInt(price),
-        category: l.categoryKeys[selectedCategory],
-        condition: l.conditionKeys[selectedCondition],
-        description: description,
-        seller_id: user.id,
-        seller_name: user.user_metadata?.full_name || user.email,
-        image_url: imageUri,
-      });
+      const { data: product, error: insertError } = await supabase
+        .from('products')
+        .insert({
+          seller_id: user.id,
+          category_id: selectedCategoryId,
+          title_ar: productName.trim(),
+          title_en: productName.trim(),
+          description_ar: description.trim(),
+          description_en: description.trim(),
+          price: parseFloat(price),
+          currency: 'EGP',
+          condition: selectedCondition,
+          status: 'active',
+          size: selectedSize,
+          color: selectedColor,
+          brand: selectedBrand,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
-      Alert.alert(l.success, l.successMsg);
-      onBack();
+      if (insertError) throw insertError;
+
+      const imageObjects = images.map((uri) => ({ uri }));
+      const uploadedUrls = await uploadMultipleImages(imageObjects);
+
+      if (uploadedUrls.length > 0) {
+        const imageRows = uploadedUrls.map((url, index) => ({
+          product_id: product.id,
+          image_url: url,
+          display_order: index,
+        }));
+
+        const { error: imagesError } = await supabase
+          .from('product_images')
+          .insert(imageRows);
+
+        if (imagesError) {
+          console.log('product_images insert error:', imagesError.message);
+        }
+      }
+
+      Alert.alert(L.success, L.successMsg);
+      onBack && onBack();
     } catch (error) {
       Alert.alert('خطأ', error.message);
     } finally {
@@ -166,11 +228,11 @@ export default function SellScreen({ lang = 'ar', onBack, user }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backIcon}>{isRTL ? '→' : '←'}</Text>
+          <Text style={styles.backIcon}>→</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{l.title}</Text>
+        <Text style={styles.headerTitle}>{L.title}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -179,93 +241,189 @@ export default function SellScreen({ lang = 'ar', onBack, user }) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* رفع الصورة */}
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.selectedImage} />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <Text style={styles.imageIcon}>📷</Text>
-              <Text style={styles.imageText}>{l.addPhoto}</Text>
+        <Text style={styles.label}>
+          {L.addPhotos} ({images.length}/{MAX_IMAGES})
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {images.map((uri, index) => (
+            <View key={index} style={styles.imageThumbWrapper}>
+              <Image source={{ uri }} style={styles.imageThumb} />
+              <TouchableOpacity
+                style={styles.removeImageBtn}
+                onPress={() => removeImage(index)}
+              >
+                <Text style={styles.removeImageText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {images.length < MAX_IMAGES && (
+            <View style={styles.addImagesRow}>
+              <TouchableOpacity style={styles.addImageBox} onPress={pickFromCamera}>
+                <Text style={styles.addImageIcon}>📷</Text>
+                <Text style={styles.addImageLabel}>{L.fromCamera}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.addImageBox} onPress={pickFromGallery}>
+                <Text style={styles.addImageIcon}>🖼️</Text>
+                <Text style={styles.addImageLabel}>{L.fromGallery}</Text>
+              </TouchableOpacity>
             </View>
           )}
-        </TouchableOpacity>
+        </ScrollView>
 
-        {imageUri && (
-          <TouchableOpacity style={styles.changePhotoBtn} onPress={pickImage}>
-            <Text style={styles.changePhotoText}>{l.changePhoto}</Text>
-          </TouchableOpacity>
-        )}
-
-        <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {l.productName}
-        </Text>
+        <Text style={styles.label}>{L.productName}</Text>
         <TextInput
-          style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
-          placeholder={l.productNamePlaceholder}
+          style={styles.input}
+          placeholder={L.productNamePlaceholder}
           placeholderTextColor={COLORS.gray}
           value={productName}
           onChangeText={setProductName}
+          textAlign="right"
         />
 
-        <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {l.price}
-        </Text>
+        <Text style={styles.label}>{L.price}</Text>
         <TextInput
-          style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
-          placeholder={l.pricePlaceholder}
+          style={styles.input}
+          placeholder={L.pricePlaceholder}
           placeholderTextColor={COLORS.gray}
           value={price}
           onChangeText={setPrice}
           keyboardType="numeric"
+          textAlign="right"
         />
 
-        <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {l.category}
-        </Text>
-        <View style={[styles.optionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          {l.categories.map((cat, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.optionBtn, selectedCategory === index && styles.optionBtnActive]}
-              onPress={() => setSelectedCategory(index)}
-            >
-              <Text style={[styles.optionText, selectedCategory === index && styles.optionTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.label}>{L.category}</Text>
+        {loadingCategories ? (
+          <ActivityIndicator color={COLORS.primary} />
+        ) : (
+          <View style={styles.optionsRow}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.optionBtn,
+                  selectedCategoryId === cat.id && styles.optionBtnActive,
+                ]}
+                onPress={() => setSelectedCategoryId(cat.id)}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedCategoryId === cat.id && styles.optionTextActive,
+                  ]}
+                >
+                  {cat.name_ar}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-        <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {l.condition}
-        </Text>
-        <View style={[styles.optionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
-          {l.conditions.map((cond, index) => (
+        <Text style={styles.label}>{L.condition}</Text>
+        <View style={styles.optionsRow}>
+          {L.conditions.map((cond) => (
             <TouchableOpacity
-              key={index}
-              style={[styles.optionBtn, selectedCondition === index && styles.optionBtnActive]}
-              onPress={() => setSelectedCondition(index)}
+              key={cond}
+              style={[
+                styles.optionBtn,
+                selectedCondition === cond && styles.optionBtnActive,
+              ]}
+              onPress={() => setSelectedCondition(cond)}
             >
-              <Text style={[styles.optionText, selectedCondition === index && styles.optionTextActive]}>
+              <Text
+                style={[
+                  styles.optionText,
+                  selectedCondition === cond && styles.optionTextActive,
+                ]}
+              >
                 {cond}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {l.description}
-        </Text>
+        <Text style={styles.label}>{L.size}</Text>
+        <View style={styles.optionsRow}>
+          {SIZES.map((size) => (
+            <TouchableOpacity
+              key={size}
+              style={[
+                styles.optionBtn,
+                selectedSize === size && styles.optionBtnActive,
+              ]}
+              onPress={() => setSelectedSize(selectedSize === size ? null : size)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  selectedSize === size && styles.optionTextActive,
+                ]}
+              >
+                {size}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{L.color}</Text>
+        <View style={styles.optionsRow}>
+          {COLORS_LIST.map((color) => (
+            <TouchableOpacity
+              key={color}
+              style={[
+                styles.optionBtn,
+                selectedColor === color && styles.optionBtnActive,
+              ]}
+              onPress={() => setSelectedColor(selectedColor === color ? null : color)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  selectedColor === color && styles.optionTextActive,
+                ]}
+              >
+                {color}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{L.brand}</Text>
+        <View style={styles.optionsRow}>
+          {POPULAR_BRANDS.map((brand) => (
+            <TouchableOpacity
+              key={brand.id}
+              style={[
+                styles.optionBtn,
+                selectedBrand === brand.name && styles.optionBtnActive,
+              ]}
+              onPress={() =>
+                setSelectedBrand(selectedBrand === brand.name ? null : brand.name)
+              }
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  selectedBrand === brand.name && styles.optionTextActive,
+                ]}
+              >
+                {brand.ar}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>{L.description}</Text>
         <TextInput
-          style={[styles.input, styles.textArea, { textAlign: isRTL ? 'right' : 'left' }]}
-          placeholder={l.descriptionPlaceholder}
+          style={[styles.input, styles.textArea]}
+          placeholder={L.descriptionPlaceholder}
           placeholderTextColor={COLORS.gray}
           value={description}
           onChangeText={setDescription}
           multiline
           numberOfLines={4}
           textAlignVertical="top"
+          textAlign="right"
         />
 
         <TouchableOpacity
@@ -276,7 +434,7 @@ export default function SellScreen({ lang = 'ar', onBack, user }) {
           {loading ? (
             <ActivityIndicator color={COLORS.white} />
           ) : (
-            <Text style={styles.publishBtnText}>{l.publish}</Text>
+            <Text style={styles.publishBtnText}>{L.publish}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -287,6 +445,7 @@ export default function SellScreen({ lang = 'ar', onBack, user }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.white },
   header: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -298,35 +457,13 @@ const styles = StyleSheet.create({
   backIcon: { fontSize: 22, color: COLORS.navy },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.navy },
   scrollContent: { padding: 16, paddingBottom: 60 },
-
-  imagePicker: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderStyle: 'dashed',
-  },
-  selectedImage: { width: '100%', height: '100%' },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-  },
-  imageIcon: { fontSize: 40, marginBottom: 8 },
-  imageText: { fontSize: 15, color: COLORS.gray, fontWeight: '500' },
-  changePhotoBtn: { alignSelf: 'center', marginBottom: 8 },
-  changePhotoText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
-
   label: {
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.navy,
     marginBottom: 8,
     marginTop: 16,
+    textAlign: 'right',
   },
   input: {
     backgroundColor: COLORS.surface,
@@ -339,7 +476,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.lightGray,
   },
   textArea: { height: 100, paddingTop: 12 },
-  optionsRow: { flexWrap: 'wrap', gap: 8 },
+  optionsRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   optionBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -355,6 +496,42 @@ const styles = StyleSheet.create({
   },
   optionText: { fontSize: 14, color: COLORS.navy, fontWeight: '500' },
   optionTextActive: { color: COLORS.white },
+  imageThumbWrapper: {
+    position: 'relative',
+    marginEnd: 10,
+  },
+  imageThumb: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.primary,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageText: { color: COLORS.white, fontWeight: 'bold', lineHeight: 18 },
+  addImagesRow: { flexDirection: 'row', gap: 10 },
+  addImageBox: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginEnd: 10,
+  },
+  addImageIcon: { fontSize: 22, marginBottom: 4 },
+  addImageLabel: { fontSize: 11, color: COLORS.primary, textAlign: 'center' },
   publishBtn: {
     backgroundColor: COLORS.primary,
     borderRadius: 12,
