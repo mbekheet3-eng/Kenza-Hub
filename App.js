@@ -4,7 +4,7 @@ import { COLORS } from './theme/colors';
 import WelcomeScreen from './screens/welcomescreen';
 import HomeScreen from './screens/HomeScreen';
 import ProductDetailsScreen from './screens/ProductDetailsScreen';
-import SellScreen from './screens/SellScreen';
+import SellWizardScreen from './screens/Sell/SellWizardScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ChatListScreen from './screens/ChatListScreen';
 import ChatScreen from './screens/ChatScreen';
@@ -72,10 +72,11 @@ export default function App() {
       )}
 
       {currentScreen === 'sell' && (
-        <SellScreen
+        <SellWizardScreen
           lang={lang}
           user={user}
           onBack={() => navigateTo('home')}
+          onPublished={() => navigateTo('home')}
         />
       )}
 
