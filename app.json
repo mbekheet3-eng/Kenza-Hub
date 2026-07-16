@@ -22,11 +22,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "احنا محتاجين نوصل لصورك عشان تضيف صور المنتج",
+          "cameraPermission": "احنا محتاجين نوصل للكاميرا عشان تصور المنتج"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "c8647bc0-fa95-4ae4-820a-f84d4e1da0ac"
