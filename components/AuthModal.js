@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { TRANSLATIONS } from '../translations';
-import { signIn, signUp } from '../services/auth';
+import { signIn, signUp, signInWithGoogle } from '../services/auth';
 
 export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess }) {
   const t = TRANSLATIONS[lang];
@@ -25,6 +25,7 @@ export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess 
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const resetForm = () => {
@@ -45,6 +46,22 @@ export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess 
     resetForm();
     setIsLogin(true);
     closeModal();
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    try {
+      const session = await signInWithGoogle();
+      if (session) {
+        handleClose();
+        if (onSuccess) onSuccess();
+      }
+      // لو session طلعت null معناها المستخدم لغى العملية بنفسه - من غير رسالة خطأ
+    } catch (error) {
+      Alert.alert(t.error, error.message || t.loginError);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleEmailAuth = async () => {
@@ -124,12 +141,19 @@ export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess 
                   {/* زرار Google */}
                   <TouchableOpacity
                     style={[styles.authBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                    onPress={() => Alert.alert('Google', 'قريبًا')}
+                    onPress={handleGoogleAuth}
+                    disabled={googleLoading}
                   >
-                    <View style={styles.googleIconWrap}>
-                      <Text style={styles.googleG}>G</Text>
-                    </View>
-                    <Text style={styles.authBtnText}>{t.google}</Text>
+                    {googleLoading ? (
+                      <ActivityIndicator color={COLORS.navy} />
+                    ) : (
+                      <>
+                        <View style={styles.googleIconWrap}>
+                          <Text style={styles.googleG}>G</Text>
+                        </View>
+                        <Text style={styles.authBtnText}>{t.google}</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
 
                   {/* زرار Apple */}

@@ -1,3 +1,7 @@
+// لازم يتحملوا الأول قبل أي حاجة تانية عشان Supabase OAuth يشتغل صح على الموبايل
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+
 import { registerRootComponent } from 'expo';
 
 import App from './App';
