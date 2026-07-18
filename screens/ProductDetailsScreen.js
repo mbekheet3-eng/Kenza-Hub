@@ -79,10 +79,6 @@ export default function ProductDetailsScreen({ product, lang = 'ar', onBack, use
       Alert.alert('', l.loginRequired);
       return;
     }
-    if (product.seller_id === user.id) {
-      Alert.alert('', l.cantBuyOwn);
-      return;
-    }
 
     setLoading(true);
     try {

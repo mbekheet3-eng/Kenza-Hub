@@ -1,24 +1,32 @@
 import { supabase } from './supabase';
 
-// إنشاء طلب جديد
+// إنشاء طلب جديد — عن طريق order-create Edge Function (Frozen) بدل INSERT مباشر
 export const createOrder = async (product, buyer) => {
-  const { data, error } = await supabase
-    .from('orders')
-    .insert({
-      product_id: product.id,
-      buyer_id: buyer.id,
-      seller_id: product.seller_id,
-      price: product.price,
-      status: 'pending',
-      buyer_name: buyer.user_metadata?.full_name || buyer.email,
-      seller_name: product.sellerName,
-      product_title: product.title,
-      product_image: product.image,
-    })
-    .select()
-    .single();
+  // shipping_address مؤقت للـ Beta: مبني من city/country بتاعة المستخدم
+  const { data: profile } = await supabase
+    .from('users')
+    .select('city, country')
+    .eq('id', buyer.id)
+    .maybeSingle();
 
-  if (error) throw error;
+  const addressParts = [profile?.city, profile?.country].filter(Boolean);
+  const shipping_address =
+    addressParts.length > 0
+      ? addressParts.join(', ')
+      : 'Address will be confirmed with the buyer';
+
+  const { data, error } = await supabase.functions.invoke('order-create', {
+    body: {
+      product_id: product.id,
+      shipping_address,
+    },
+  });
+
+  if (error) {
+    const message = error.context?.error || error.message || 'Order creation failed';
+    throw new Error(message);
+  }
+
   return data;
 };
 
