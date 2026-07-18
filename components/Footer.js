@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
   },
   footerVersion: {
     color: COLORS.gray || '#888',
-    fontSize: 12,
+    fontSize: 13,
   },
 });
