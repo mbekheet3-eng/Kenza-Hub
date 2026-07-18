@@ -60,12 +60,13 @@ export default function LanguageSelector({
 }
 
 const styles = StyleSheet.create({
-topBar: {
+  topBar: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 16,   // ← بقى 16 بدل 4
+    paddingTop: 6,          // كان 16
+    paddingBottom: 16,
   },
+
   langSelector: {
     alignItems: 'center',
     backgroundColor: '#F0F0F0',
@@ -74,14 +75,33 @@ topBar: {
     borderRadius: 24,
     alignSelf: 'flex-start',
   },
-  langFlag: { fontSize: 18, marginRight: 6 },
-  langText: { fontSize: 14, color: COLORS.navy, fontWeight: '600', marginHorizontal: 4 },
-  langChevron: { fontSize: 12, color: COLORS.navy, marginLeft: 4 },
 
-  langOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' },
+  langFlag: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+
+  langText: {
+    fontSize: 14,
+    color: COLORS.navy,
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+
+  langChevron: {
+    fontSize: 12,
+    color: COLORS.navy,
+    marginLeft: 4,
+  },
+
+  langOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+
   langMenu: {
     position: 'absolute',
-    top: 62,
+    top: 52,              // كان 62
     left: 16,
     backgroundColor: COLORS.white,
     borderRadius: 14,
@@ -93,6 +113,7 @@ topBar: {
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
+
   langOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -100,8 +121,25 @@ topBar: {
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  langOptionFlag: { fontSize: 18, marginRight: 10 },
-  langOptionText: { fontSize: 14, color: COLORS.navy },
-  langOptionTextActive: { fontSize: 14, fontWeight: 'bold', color: COLORS.primary },
-  langCheck: { color: COLORS.primary, fontWeight: 'bold' },
+
+  langOptionFlag: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+
+  langOptionText: {
+    fontSize: 14,
+    color: COLORS.navy,
+  },
+
+  langOptionTextActive: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+
+  langCheck: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
 });
