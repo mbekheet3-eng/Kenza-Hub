@@ -8,7 +8,7 @@ export function validateImages(form) {
 }
 
 export function validateCategory(form) {
-  if (!form.category || form.category.trim() === '') {
+  if (!form.categoryId) {
     return 'Please choose a category.';
   }
   return null;

@@ -2,15 +2,6 @@
 
 export const MAX_IMAGES = 8;
 
-export const CATEGORIES = [
-  'Women',
-  'Men',
-  'Kids',
-  'Shoes',
-  'Bags',
-  'Accessories',
-];
-
 export const BRANDS = [
   'Zara',
   'H&M',
@@ -74,6 +65,7 @@ export const CURRENCIES = [
 export const INITIAL_FORM = {
   images: [],
   category: '',
+  categoryId: null,
   brand: '',
   title: '',
   size: '',

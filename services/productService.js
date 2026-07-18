@@ -132,6 +132,29 @@ export async function deleteProduct(id) {
 
 
 /**
+ * حفظ روابط الصور في جدول product_images بعد إنشاء المنتج
+ * (الصور مش عمود في products — جدول منفصل)
+ */
+export async function addProductImages(productId, imageUrls = []) {
+  if (!productId || imageUrls.length === 0) return [];
+
+  const rows = imageUrls.map((url, index) => ({
+    product_id: productId,
+    image_url: url,
+    display_order: index,
+  }));
+
+  const { data, error } = await supabase
+    .from('product_images')
+    .insert(rows)
+    .select();
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+/**
  * جلب منتجات مستخدم معين
  */
 export async function getUserProducts(userId) {

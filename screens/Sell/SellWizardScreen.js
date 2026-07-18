@@ -15,7 +15,8 @@ import StepPrice from './StepPrice';
 import StepReview from './StepReview';
 import { validateStep } from './validation';
 import { INITIAL_FORM } from './constants';
-import { addProduct } from '../../services/productService';
+import { addProduct, addProductImages } from '../../services/productService';
+import { getOrCreateSellerProfileId } from '../../services/sellerProfile';
 import { uploadMultipleImages } from '../../services/uploadService';
 
 // ترتيب الخطوات لازم يتطابق مع STEPS في SellProgress.js
@@ -64,7 +65,10 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
     setLoading(true);
 
     try {
-      // form.images عبارة عن مصفوفة URIs محلية من الجهاز - لازم نرفعها الأول
+      // 1) لازم يكون عنده seller_profile — لو مفيش، بينشئ واحد تلقائيًا
+      const sellerProfileId = await getOrCreateSellerProfileId(user);
+
+      // 2) form.images عبارة عن مصفوفة URIs محلية من الجهاز - لازم نرفعها الأول
       const imageFiles = form.images.map((uri) => ({ uri }));
       const uploadedUrls = await uploadMultipleImages(imageFiles);
 
@@ -74,32 +78,39 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
         return;
       }
 
+      // 3) الأعمدة الفعلية في جدول products (title/description ثنائية اللغة،
+      // مفيش عمود images - الصور بتتحفظ في product_images بعد الإنشاء)
       const product = {
-        user_id: user.id,
-        title: form.title,
-        category: form.category,
-        brand: form.brand,
-        size: form.size,
-        color: form.color,
-        condition: form.condition,
-        description: form.description,
+        seller_id: sellerProfileId,
+        category_id: form.categoryId,
+        title_en: form.title,
+        title_ar: form.title,
+        description_en: form.description,
+        description_ar: form.description,
         price: Number(form.price),
         currency: form.currency,
-        images: uploadedUrls,
+        condition: form.condition,
+        size: form.size,
+        color: form.color,
+        brand: form.brand,
       };
 
       const created = await addProduct(product);
 
-      setLoading(false);
-
-      if (created) {
-        Alert.alert('تم', 'اتنشر المنتج بنجاح!');
-        setForm(INITIAL_FORM);
-        setStep(0);
-        onPublished ? onPublished(created) : (onBack && onBack());
-      } else {
+      if (!created) {
         Alert.alert('خطأ', 'حصلت مشكلة في نشر المنتج. حاول تاني.');
+        setLoading(false);
+        return;
       }
+
+      // 4) حفظ روابط الصور في product_images بعد ما المنتج اتنشأ
+      await addProductImages(created.id, uploadedUrls);
+
+      setLoading(false);
+      Alert.alert('تم', 'اتنشر المنتج بنجاح!');
+      setForm(INITIAL_FORM);
+      setStep(0);
+      onPublished ? onPublished(created) : (onBack && onBack());
     } catch (err) {
       setLoading(false);
       Alert.alert('خطأ', err.message || 'حصلت مشكلة غير متوقعة.');
