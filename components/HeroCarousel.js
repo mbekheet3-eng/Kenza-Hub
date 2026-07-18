@@ -89,22 +89,23 @@ export default function HeroCarousel() {
 }
 
 const styles = StyleSheet.create({
-  gridSection: {
-    flex: 1.2,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
-  scrollRow: {
-    height: 180,
-    marginVertical: 6,
-    overflow: 'hidden',
-  },
-  scrollImage: {
-    width: 140,
-    height: 180,
-    marginRight: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightGray,
-  },
-});
+gridSection: {
+  flex: 1.2,
+  backgroundColor: COLORS.white,
+  justifyContent: 'center',
+  paddingVertical: 6,      // كان 10
+},
+
+scrollRow: {
+  height: 170,             // كان 180
+  marginVertical: 6,
+  overflow: 'hidden',
+},
+
+scrollImage: {
+  width: 140,
+  height: 170,             // كان 180
+  marginRight: 8,
+  borderRadius: 12,
+  backgroundColor: COLORS.lightGray,
+},
