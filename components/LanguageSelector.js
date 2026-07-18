@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
 topBar: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 6,
     paddingBottom: 16,   // ← بقى 16 بدل 4
   },
   langSelector: {
