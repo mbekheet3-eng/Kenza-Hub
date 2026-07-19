@@ -183,12 +183,39 @@ export async function addProductImages(productId, imageUrls = []) {
 /**
  * جلب منتجات مستخدم معين
  */
+/**
+ * جلب منتجات المستخدم الحالي (كبائع)
+ * نفس منطق getSellerOrders بالظبط: لازم نعمل Resolve لـ seller_profile_id
+ * بتاعه عن طريق seller_profile_members الأول، لأن products.seller_id
+ * بيشاور على seller_profiles.id مش على users.id مباشرة.
+ */
 export async function getUserProducts(userId) {
   try {
+    const { data: membership, error: membershipError } = await supabase
+      .from('seller_profile_members')
+      .select('seller_profile_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (membershipError) throw membershipError;
+
+    // المستخدم لسه معندوش seller_profile خالص -> يبقى أكيد مفيش منتجات ليه
+    if (!membership?.seller_profile_id) {
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('products')
-      .select('*')
-      .eq('user_id', userId)
+      .select(
+        `
+        id, seller_id, category_id, title_en, title_ar,
+        description_en, description_ar, price, currency,
+        condition, status, size, color, brand, created_at,
+        categories ( id, name_en, name_ar, slug ),
+        product_images ( image_url, display_order )
+      `
+      )
+      .eq('seller_id', membership.seller_profile_id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
