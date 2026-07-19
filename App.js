@@ -9,6 +9,10 @@ import ProfileScreen from './screens/ProfileScreen';
 import ChatListScreen from './screens/ChatListScreen';
 import ChatScreen from './screens/ChatScreen';
 import OrdersScreen from './screens/OrdersScreen';
+import SearchingScreen from './screens/SearchingScreen';
+import SearchByImageScreen from './screens/SearchByImageScreen';
+import SearchPreviewScreen from './screens/SearchPreviewScreen';
+import SearchResult from './screens/SearchResult';
 import { onAuthStateChange } from './services/auth';
 
 I18nManager.allowRTL(true);
@@ -19,6 +23,7 @@ export default function App() {
   const [lang, setLang] = useState('ar');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [searchParams, setSearchParams] = useState({});
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -34,6 +39,9 @@ export default function App() {
   const navigateTo = (screen, params = null) => {
     if (screen === 'productDetails') setSelectedProduct(params);
     if (screen === 'chat') setSelectedChat(params);
+    if (['searching', 'searchByImage', 'searchPreview', 'searchResult'].includes(screen) && params) {
+      setSearchParams(params);
+    }
     setCurrentScreen(screen);
   };
 
@@ -53,10 +61,36 @@ export default function App() {
         <HomeScreen
           lang={lang}
           user={user}
+          navigateTo={navigateTo}
           onNavigateProduct={(product) => navigateTo('productDetails', product)}
           onNavigateSell={() => navigateTo('sell')}
           onNavigateProfile={() => navigateTo('profile')}
           onNavigateChats={() => navigateTo('chatList')}
+        />
+      )}
+
+      {currentScreen === 'searching' && (
+        <SearchingScreen
+          navigateTo={navigateTo}
+          searchQuery={searchParams?.query || ''}
+        />
+      )}
+
+      {currentScreen === 'searchByImage' && (
+        <SearchByImageScreen navigateTo={navigateTo} />
+      )}
+
+      {currentScreen === 'searchPreview' && (
+        <SearchPreviewScreen
+          navigateTo={navigateTo}
+          imageUri={searchParams?.imageUri}
+        />
+      )}
+
+      {currentScreen === 'searchResult' && (
+        <SearchResult
+          navigateTo={navigateTo}
+          searchQuery={searchParams?.query || ''}
         />
       )}
 

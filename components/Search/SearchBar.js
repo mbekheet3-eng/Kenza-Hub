@@ -76,7 +76,7 @@ const handleSearch = () => {
         style={styles.iconButton}
 onPress={() =>
   navigateTo &&
-  navigateTo('SearchByImageScreen')
+  navigateTo('searchByImage')
 }
         activeOpacity={0.7}
       >

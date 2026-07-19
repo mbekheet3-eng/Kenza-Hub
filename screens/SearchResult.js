@@ -64,7 +64,7 @@ export default function SearchResultScreen({
       style={styles.card}
       onPress={() =>
         navigateTo &&
-        navigateTo('productdetails', {
+        navigateTo('productDetails', {
           product: item,
         })
       }
