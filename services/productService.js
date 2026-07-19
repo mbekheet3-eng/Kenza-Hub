@@ -44,11 +44,22 @@ export async function searchProducts(query) {
       return getProducts();
     }
 
+    const q = query.trim();
+
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(
+        `
+        id, seller_id, category_id, title_en, title_ar,
+        description_en, description_ar, price, currency,
+        condition, status, size, color, brand, created_at,
+        categories ( id, name_en, name_ar, slug ),
+        product_images ( image_url, display_order )
+      `
+      )
+      .eq('status', 'active')
       .or(
-        `title.ilike.%${query}%,description.ilike.%${query}%,brand.ilike.%${query}%`
+        `title_en.ilike.%${q}%,title_ar.ilike.%${q}%,description_en.ilike.%${q}%,description_ar.ilike.%${q}%,brand.ilike.%${q}%`
       )
       .order('created_at', { ascending: false });
 
