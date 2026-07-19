@@ -109,3 +109,4 @@ scrollImage: {
   borderRadius: 12,
   backgroundColor: COLORS.lightGray,
 },
+});
