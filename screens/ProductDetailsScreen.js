@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { createOrder } from '../services/orders';
+import { getOrCreateChat } from '../services/chat';
 
 const { width } = Dimensions.get('window');
 
@@ -93,18 +94,21 @@ export default function ProductDetailsScreen({ product, lang = 'ar', onBack, use
     }
   };
 
-  const handleContact = () => {
+  const handleContact = async () => {
     if (!user) {
       Alert.alert('', l.loginRequired);
       return;
     }
-    onChat({
-      id: `${user.id}_${product.seller_id}`,
-      otherUserName: product.sellerName || 'البائع',
-      lastMessage: '',
-      lastMessageTime: '',
-      unread: 0,
-    });
+    try {
+      const chat = await getOrCreateChat(user.id, product.seller_id, product.id);
+      onChat({
+        id: chat.id,
+        title: product.title,
+        image: product.image,
+      });
+    } catch (error) {
+      Alert.alert('خطأ', error.message);
+    }
   };
 
   return (

@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   FlatList,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { COLORS } from '../theme/colors';
-import { supabase } from '../services/supabase';
+import { getChats } from '../services/chat';
 
 const LABELS = {
   ar: {
@@ -34,30 +35,7 @@ const LABELS = {
   },
 };
 
-// Mock data للمحادثات لحد ما نربط Supabase
-const MOCK_CHATS = [
-  {
-    id: '1',
-    otherUserName: 'أحمد محمد',
-    lastMessage: 'هل المنتج لسه متاح؟',
-    lastMessageTime: '10:30',
-    unread: 2,
-  },
-  {
-    id: '2',
-    otherUserName: 'سارة علي',
-    lastMessage: 'شكراً، هوصلك المنتج بكرا',
-    lastMessageTime: 'أمس',
-    unread: 0,
-  },
-  {
-    id: '3',
-    otherUserName: 'محمود حسن',
-    lastMessage: 'ممكن تخفض السعر شوية؟',
-    lastMessageTime: 'الأحد',
-    unread: 1,
-  },
-];
+const PLACEHOLDER_IMAGE = 'https://placehold.co/160x160/F5F5F5/999999?text=Kenza';
 
 export default function ChatListScreen({ lang = 'ar', onBack, onOpenChat, user }) {
   const isRTL = lang === 'ar';
@@ -67,26 +45,17 @@ export default function ChatListScreen({ lang = 'ar', onBack, onOpenChat, user }
 
   const fetchChats = useCallback(async () => {
     if (!user) {
+      setChats([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('chats')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setChats(data);
-      } else {
-        setChats(MOCK_CHATS);
-      }
-    } catch {
-      setChats(MOCK_CHATS);
+      const data = await getChats(user.id);
+      setChats(data || []);
+    } catch (error) {
+      console.log('fetchChats error:', error.message);
+      setChats([]);
     } finally {
       setLoading(false);
     }
@@ -96,34 +65,31 @@ export default function ChatListScreen({ lang = 'ar', onBack, onOpenChat, user }
     fetchChats();
   }, [fetchChats]);
 
-  const renderChat = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.chatItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-      onPress={() => onOpenChat(item)}
-    >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {item.otherUserName?.[0]?.toUpperCase() || '?'}
-        </Text>
-      </View>
+  const renderChat = ({ item }) => {
+    const title = lang === 'ar' ? item.products?.title_ar : item.products?.title_en;
+    const images = (item.products?.product_images || [])
+      .slice()
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    const image = images[0]?.image_url || PLACEHOLDER_IMAGE;
 
-      <View style={[styles.chatInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-        <View style={[styles.chatHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <Text style={styles.chatName}>{item.otherUserName}</Text>
-          <Text style={styles.chatTime}>{item.lastMessageTime}</Text>
-        </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
+    return (
+      <TouchableOpacity
+        style={[styles.chatItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+        onPress={() => onOpenChat({ id: item.id, title, image })}
+      >
+        <Image source={{ uri: image }} style={styles.avatar} />
 
-      {item.unread > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadText}>{item.unread}</Text>
+        <View style={[styles.chatInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+          <Text style={styles.chatName} numberOfLines={1}>{title}</Text>
+          {item.last_message_at && (
+            <Text style={styles.chatTime}>
+              {new Date(item.last_message_at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : lang)}
+            </Text>
+          )}
         </View>
-      )}
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -209,28 +175,10 @@ const styles = StyleSheet.create({
   avatar: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
   },
-  avatarText: { fontSize: 20, color: COLORS.white, fontWeight: 'bold' },
   chatInfo: { flex: 1 },
-  chatHeader: {
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 4,
-  },
-  chatName: { fontSize: 15, fontWeight: 'bold', color: COLORS.navy },
+  chatName: { fontSize: 15, fontWeight: 'bold', color: COLORS.navy, marginBottom: 4 },
   chatTime: { fontSize: 12, color: COLORS.gray },
-  lastMessage: { fontSize: 13, color: COLORS.gray },
-  unreadBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadText: { fontSize: 11, color: COLORS.white, fontWeight: 'bold' },
 });
