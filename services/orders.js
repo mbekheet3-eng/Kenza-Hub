@@ -34,7 +34,15 @@ export const createOrder = async (product, buyer) => {
 export const getBuyerOrders = async (buyerId) => {
   const { data, error } = await supabase
     .from('orders')
-    .select('*')
+    .select(
+      `
+      id, status, total_amount, currency, created_at,
+      products (
+        title_en, title_ar,
+        product_images ( image_url, display_order )
+      )
+    `
+    )
     .eq('buyer_id', buyerId)
     .order('created_at', { ascending: false });
 
@@ -43,11 +51,36 @@ export const getBuyerOrders = async (buyerId) => {
 };
 
 // جلب طلبات البائع
-export const getSellerOrders = async (sellerId) => {
+// ملحوظة: order-create Edge Function بيسيب عمود orders.seller_user_id فاضي
+// (NULL) دايمًا، وبيحط seller_profile_id بس. فلازم نعمل Resolve لـ
+// seller_profile_id بتاع المستخدم عن طريق seller_profile_members الأول،
+// وبعدين نفلتر orders بيه.
+export const getSellerOrders = async (userId) => {
+  const { data: membership, error: membershipError } = await supabase
+    .from('seller_profile_members')
+    .select('seller_profile_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (membershipError) throw membershipError;
+
+  // المستخدم لسه معندوش seller_profile خالص -> يبقى أكيد مفيش طلبات كبائع
+  if (!membership?.seller_profile_id) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('orders')
-    .select('*')
-    .eq('seller_id', sellerId)
+    .select(
+      `
+      id, status, total_amount, currency, created_at,
+      products (
+        title_en, title_ar,
+        product_images ( image_url, display_order )
+      )
+    `
+    )
+    .eq('seller_profile_id', membership.seller_profile_id)
     .order('created_at', { ascending: false });
 
   if (error) throw error;

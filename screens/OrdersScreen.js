@@ -70,29 +70,6 @@ const STATUS_COLORS = {
   cancelled: '#EF4444',
 };
 
-const MOCK_ORDERS = [
-  {
-    id: '1',
-    product_title: 'جاكيت جينز',
-    product_image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=300&h=400&fit=crop',
-    price: 250,
-    status: 'pending',
-    buyer_name: 'أحمد محمد',
-    seller_name: 'سارة علي',
-    created_at: '2026-07-01T10:00:00',
-  },
-  {
-    id: '2',
-    product_title: 'فستان صيفي',
-    product_image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=400&fit=crop',
-    price: 180,
-    status: 'completed',
-    buyer_name: 'أحمد محمد',
-    seller_name: 'منى حسن',
-    created_at: '2026-06-28T10:00:00',
-  },
-];
-
 export default function OrdersScreen({ lang = 'ar', onBack, user }) {
   const isRTL = lang === 'ar';
   const l = LABELS[lang];
@@ -102,7 +79,7 @@ export default function OrdersScreen({ lang = 'ar', onBack, user }) {
 
   const fetchOrders = useCallback(async () => {
     if (!user) {
-      setOrders(MOCK_ORDERS);
+      setOrders([]);
       setLoading(false);
       return;
     }
@@ -112,9 +89,10 @@ export default function OrdersScreen({ lang = 'ar', onBack, user }) {
         ? await getBuyerOrders(user.id)
         : await getSellerOrders(user.id);
 
-      setOrders(data && data.length > 0 ? data : MOCK_ORDERS);
-    } catch {
-      setOrders(MOCK_ORDERS);
+      setOrders(data || []);
+    } catch (error) {
+      console.log('fetchOrders error:', error.message);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -124,31 +102,38 @@ export default function OrdersScreen({ lang = 'ar', onBack, user }) {
     fetchOrders();
   }, [fetchOrders]);
 
-  const renderOrder = ({ item }) => (
-    <View style={styles.orderCard}>
-      <Image source={{ uri: item.product_image }} style={styles.orderImage} />
-      <View style={styles.orderInfo}>
-        <Text style={[styles.orderTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {item.product_title}
-        </Text>
-        <Text style={[styles.orderPrice, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {item.price} {l.currency}
-        </Text>
-        <Text style={[styles.orderPerson, { textAlign: isRTL ? 'right' : 'left' }]}>
-          {activeTab === 'buyer' ? item.seller_name : item.buyer_name}
-        </Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: STATUS_COLORS[item.status] + '20',
-            alignSelf: isRTL ? 'flex-end' : 'flex-start' }
-        ]}>
-          <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] }]}>
-            {l.status[item.status]}
+  const renderOrder = ({ item }) => {
+    const title = lang === 'ar' ? item.products?.title_ar : item.products?.title_en;
+    const images = (item.products?.product_images || [])
+      .slice()
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    const image =
+      images[0]?.image_url ||
+      'https://placehold.co/160x160/F5F5F5/999999?text=Kenza';
+
+    return (
+      <View style={styles.orderCard}>
+        <Image source={{ uri: image }} style={styles.orderImage} />
+        <View style={styles.orderInfo}>
+          <Text style={[styles.orderTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {title}
           </Text>
+          <Text style={[styles.orderPrice, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {item.total_amount} {item.currency || l.currency}
+          </Text>
+          <View style={[
+            styles.statusBadge,
+            { backgroundColor: (STATUS_COLORS[item.status] || COLORS.gray) + '20',
+              alignSelf: isRTL ? 'flex-end' : 'flex-start' }
+          ]}>
+            <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] || COLORS.gray }]}>
+              {l.status[item.status] || item.status}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
