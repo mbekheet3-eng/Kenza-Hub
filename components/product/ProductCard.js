@@ -25,7 +25,11 @@ export default function ProductCard({
       onPress={() => onPress(product)}
     >
       <Image
-        source={{ uri: product.image }}
+        source={{
+          uri:
+            product.image ||
+            'https://placehold.co/400x540/F5F5F5/999999?text=Kenza',
+        }}
         style={styles.image}
       />
 

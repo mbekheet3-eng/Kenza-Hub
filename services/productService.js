@@ -1,14 +1,29 @@
 import { supabase } from './supabase';
 
 /**
- * جلب كل المنتجات
+ * جلب المنتجات (مع الصور والتصنيف) - قابلة للفلترة بتصنيف معين
  */
-export async function getProducts() {
+export async function getProducts({ categoryId } = {}) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('products')
-      .select('*')
+      .select(
+        `
+        id, seller_id, category_id, title_en, title_ar,
+        description_en, description_ar, price, currency,
+        condition, status, size, color, brand, created_at,
+        categories ( id, name_en, name_ar, slug ),
+        product_images ( image_url, display_order )
+      `
+      )
+      .eq('status', 'active')
       .order('created_at', { ascending: false });
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

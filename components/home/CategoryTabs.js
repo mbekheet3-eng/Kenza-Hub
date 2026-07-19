@@ -7,15 +7,12 @@ import {
 } from 'react-native';
 import { COLORS } from '../../theme/colors';
 
-export const CATEGORIES = [
-  { key: 'all', ar: 'الكل', en: 'All', fr: 'Tout' },
-  { key: 'women', ar: 'سيدات', en: 'Women', fr: 'Femmes' },
-  { key: 'men', ar: 'رجال', en: 'Men', fr: 'Hommes' },
-  { key: 'kids', ar: 'أطفال', en: 'Kids', fr: 'Enfants' },
-];
+const ALL_LABELS = { ar: 'الكل', en: 'All', fr: 'Tout' };
 
+// التصنيفات بتيجي من الأب (HomeScreen) بعد ما يجيبها من جدول categories الحقيقي
 export default function CategoryTabs({
   lang,
+  categories = [],
   selectedCategory,
   onSelectCategory,
 }) {
@@ -25,26 +22,29 @@ export default function CategoryTabs({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {CATEGORIES.map((cat) => {
-        const active = selectedCategory === cat.key;
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={[styles.tab, selectedCategory === 'all' && styles.activeTab]}
+        onPress={() => onSelectCategory('all')}
+      >
+        <Text style={[styles.text, selectedCategory === 'all' && styles.activeText]}>
+          {ALL_LABELS[lang] || ALL_LABELS.en}
+        </Text>
+      </TouchableOpacity>
+
+      {categories.map((cat) => {
+        const active = selectedCategory === cat.id;
+        const label = lang === 'ar' ? cat.name_ar : cat.name_en;
 
         return (
           <TouchableOpacity
-            key={cat.key}
+            key={cat.id}
             activeOpacity={0.85}
-            style={[
-              styles.tab,
-              active && styles.activeTab,
-            ]}
-            onPress={() => onSelectCategory(cat.key)}
+            style={[styles.tab, active && styles.activeTab]}
+            onPress={() => onSelectCategory(cat.id)}
           >
-            <Text
-              style={[
-                styles.text,
-                active && styles.activeText,
-              ]}
-            >
-              {cat[lang] || cat.en}
+            <Text style={[styles.text, active && styles.activeText]}>
+              {label}
             </Text>
           </TouchableOpacity>
         );
