@@ -11,10 +11,19 @@ import {
 import styles from './SellStyles';
 import { BRANDS } from './constants';
 
+const LABELS = {
+  ar: { title: 'اختار الماركة', subtitle: 'اختار ماركة القطعة بتاعتك.' },
+  en: { title: 'Select Brand', subtitle: 'Choose the brand of your item.' },
+  fr: { title: 'Choisir la marque', subtitle: 'Choisissez la marque de votre article.' },
+};
+
 export default function StepBrand({
   form,
   setForm,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   const selectBrand = (brand) => {
     setForm({
       ...form,
@@ -25,11 +34,11 @@ export default function StepBrand({
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.sectionTitle}>
-        Select Brand
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Choose the brand of your item.
+        {l.subtitle}
       </Text>
 
       <ScrollView

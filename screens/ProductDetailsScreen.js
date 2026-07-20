@@ -36,6 +36,7 @@ const LABELS = {
     orderSuccess: 'تم الطلب بنجاح',
     orderSuccessMsg: 'هيتواصل معاك البائع قريبًا',
     noDescription: 'لا يوجد وصف متاح.',
+    error: 'خطأ',
   },
   en: {
     buy: 'Buy Now',
@@ -50,6 +51,7 @@ const LABELS = {
     orderSuccess: 'Order placed successfully',
     orderSuccessMsg: 'The seller will contact you soon',
     noDescription: 'No description available.',
+    error: 'Error',
   },
   fr: {
     buy: 'Acheter maintenant',
@@ -64,6 +66,7 @@ const LABELS = {
     orderSuccess: 'Commande passée avec succès',
     orderSuccessMsg: 'Le vendeur vous contactera bientôt',
     noDescription: 'Aucune description disponible.',
+    error: 'Erreur',
   },
 };
 
@@ -88,7 +91,7 @@ export default function ProductDetailsScreen({ product, lang = 'ar', onBack, use
         { text: 'OK', onPress: () => onBuy(product) }
       ]);
     } catch (error) {
-      Alert.alert('خطأ', error.message);
+      Alert.alert(l.error, error.message);
     } finally {
       setLoading(false);
     }
@@ -107,7 +110,7 @@ export default function ProductDetailsScreen({ product, lang = 'ar', onBack, use
         image: product.image,
       });
     } catch (error) {
-      Alert.alert('خطأ', error.message);
+      Alert.alert(l.error, error.message);
     }
   };
 

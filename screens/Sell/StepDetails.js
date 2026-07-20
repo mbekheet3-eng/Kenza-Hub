@@ -14,12 +14,42 @@ import {
   SIZES,
   COLORS,
   CONDITIONS,
+  SIZE_LABELS,
+  COLOR_LABELS,
+  CONDITION_LABELS,
 } from './constants';
+
+const LABELS = {
+  ar: {
+    title: 'تفاصيل المنتج',
+    titlePlaceholder: 'عنوان المنتج',
+    size: 'المقاس',
+    color: 'اللون',
+    condition: 'الحالة',
+  },
+  en: {
+    title: 'Product Details',
+    titlePlaceholder: 'Product title',
+    size: 'Size',
+    color: 'Color',
+    condition: 'Condition',
+  },
+  fr: {
+    title: 'Détails du produit',
+    titlePlaceholder: 'Titre du produit',
+    size: 'Taille',
+    color: 'Couleur',
+    condition: 'État',
+  },
+};
 
 export default function StepDetails({
   form,
   setForm,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   const updateField = (key, value) => {
     setForm({
       ...form,
@@ -27,13 +57,16 @@ export default function StepDetails({
     });
   };
 
-  const renderChips = (title, field, items) => (
+  // القيمة المخزّنة فعليًا في form تفضل زي ما هي (إنجليزي) عشان تتسق مع
+  // الداتابيز، وده بس بيترجم النص المعروض للمستخدم
+  const renderChips = (title, field, items, labelMap) => (
     <>
       <Text style={styles.label}>{title}</Text>
 
       <View style={styles.row}>
         {items.map((item) => {
           const selected = form[field] === item;
+          const display = labelMap ? (labelMap[lang]?.[item] || item) : item;
 
           return (
             <TouchableOpacity
@@ -50,7 +83,7 @@ export default function StepDetails({
                   selected && styles.chipTextSelected,
                 ]}
               >
-                {item}
+                {display}
               </Text>
             </TouchableOpacity>
           );
@@ -65,21 +98,21 @@ export default function StepDetails({
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.sectionTitle}>
-        Product Details
+        {l.title}
       </Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Product title"
+        placeholder={l.titlePlaceholder}
         value={form.title}
         onChangeText={(text) => updateField('title', text)}
       />
 
-      {renderChips('Size', 'size', SIZES)}
+      {renderChips(l.size, 'size', SIZES, SIZE_LABELS)}
 
-      {renderChips('Color', 'color', COLORS)}
+      {renderChips(l.color, 'color', COLORS, COLOR_LABELS)}
 
-      {renderChips('Condition', 'condition', CONDITIONS)}
+      {renderChips(l.condition, 'condition', CONDITIONS, CONDITION_LABELS)}
     </ScrollView>
   );
 }

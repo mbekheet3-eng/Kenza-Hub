@@ -9,23 +9,44 @@ import {
 
 import styles from './SellStyles';
 
+const LABELS = {
+  ar: {
+    title: 'وصف المنتج',
+    subtitle: 'اوصف القطعة بوضوح. اذكر أي عيوب، الخامة، المقاسات، وأي تفاصيل مهمة.',
+    placeholder: 'مثال: چاكيت زارا، مقاس M، اتلبس مرتين، حالة ممتازة...',
+  },
+  en: {
+    title: 'Product Description',
+    subtitle: 'Describe the item clearly. Mention defects, material, measurements, and any important details.',
+    placeholder: 'Example: Zara jacket, size M, worn twice, excellent condition...',
+  },
+  fr: {
+    title: 'Description du produit',
+    subtitle: 'Décrivez clairement l\'article. Mentionnez les défauts, la matière, les mesures et tout détail important.',
+    placeholder: 'Exemple : Veste Zara, taille M, portée deux fois, excellent état...',
+  },
+};
+
 export default function StepDescription({
   form,
   setForm,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.sectionTitle}>
-        Product Description
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Describe the item clearly. Mention defects, material, measurements, and any important details.
+        {l.subtitle}
       </Text>
 
       <TextInput
         style={styles.textArea}
-        placeholder="Example: Zara jacket, size M, worn twice, excellent condition..."
+        placeholder={l.placeholder}
         multiline
         numberOfLines={8}
         maxLength={1000}

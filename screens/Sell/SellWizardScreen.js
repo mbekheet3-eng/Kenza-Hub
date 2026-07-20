@@ -31,7 +31,41 @@ const STEP_COMPONENTS = [
   StepReview,        // 6 - Review
 ];
 
-export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
+const ALERTS = {
+  ar: {
+    notice: 'تنبيه',
+    error: 'خطأ',
+    done: 'تم',
+    loginRequired: 'لازم تسجل دخول الأول عشان تنشر منتج.',
+    uploadFailed: 'حصلت مشكلة في رفع الصور. حاول تاني.',
+    publishFailed: 'حصلت مشكلة في نشر المنتج. حاول تاني.',
+    published: 'اتنشر المنتج بنجاح!',
+    unexpected: 'حصلت مشكلة غير متوقعة.',
+  },
+  en: {
+    notice: 'Notice',
+    error: 'Error',
+    done: 'Done',
+    loginRequired: 'You need to log in first to publish a product.',
+    uploadFailed: 'There was a problem uploading the photos. Try again.',
+    publishFailed: 'There was a problem publishing the product. Try again.',
+    published: 'Product published successfully!',
+    unexpected: 'Something unexpected happened.',
+  },
+  fr: {
+    notice: 'Avis',
+    error: 'Erreur',
+    done: 'Terminé',
+    loginRequired: 'Vous devez vous connecter avant de publier un produit.',
+    uploadFailed: 'Un problème est survenu lors du téléchargement des photos. Réessayez.',
+    publishFailed: 'Un problème est survenu lors de la publication du produit. Réessayez.',
+    published: 'Produit publié avec succès !',
+    unexpected: 'Une erreur inattendue est survenue.',
+  },
+};
+
+export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublished }) {
+  const a = ALERTS[lang] || ALERTS.ar;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -40,9 +74,9 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
   const isLastStep = step === STEP_COMPONENTS.length - 1;
 
   const goNext = () => {
-    const error = validateStep(step, form);
+    const error = validateStep(step, form, lang);
     if (error) {
-      Alert.alert('تنبيه', error);
+      Alert.alert(a.notice, error);
       return;
     }
     if (!isLastStep) setStep(step + 1);
@@ -58,7 +92,7 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
 
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert('تنبيه', 'لازم تسجل دخول الأول عشان تنشر منتج.');
+      Alert.alert(a.notice, a.loginRequired);
       return;
     }
 
@@ -73,7 +107,7 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
       const uploadedUrls = await uploadMultipleImages(imageFiles);
 
       if (uploadedUrls.length === 0) {
-        Alert.alert('خطأ', 'حصلت مشكلة في رفع الصور. حاول تاني.');
+        Alert.alert(a.error, a.uploadFailed);
         setLoading(false);
         return;
       }
@@ -98,7 +132,7 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
       const created = await addProduct(product);
 
       if (!created) {
-        Alert.alert('خطأ', 'حصلت مشكلة في نشر المنتج. حاول تاني.');
+        Alert.alert(a.error, a.publishFailed);
         setLoading(false);
         return;
       }
@@ -107,21 +141,21 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
       await addProductImages(created.id, uploadedUrls);
 
       setLoading(false);
-      Alert.alert('تم', 'اتنشر المنتج بنجاح!');
+      Alert.alert(a.done, a.published);
       setForm(INITIAL_FORM);
       setStep(0);
       onPublished ? onPublished(created) : (onBack && onBack());
     } catch (err) {
       setLoading(false);
-      Alert.alert('خطأ', err.message || 'حصلت مشكلة غير متوقعة.');
+      Alert.alert(a.error, err.message || a.unexpected);
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 }}>
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-        <SellProgress step={step} />
-        <CurrentStep form={form} setForm={setForm} />
+        <SellProgress step={step} lang={lang} />
+        <CurrentStep form={form} setForm={setForm} lang={lang} />
       </ScrollView>
 
       <SellButtons
@@ -131,6 +165,7 @@ export default function SellWizardScreen({ lang, user, onBack, onPublished }) {
         onBack={goBack}
         onNext={goNext}
         onSubmit={handleSubmit}
+        lang={lang}
       />
     </SafeAreaView>
   );

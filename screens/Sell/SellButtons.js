@@ -9,6 +9,12 @@ import {
 } from 'react-native';
 import { COLORS } from '../../theme/colors';
 
+const LABELS = {
+  ar: { back: 'رجوع', next: 'التالي', publish: 'نشر', pleaseWait: 'لحظة من فضلك...' },
+  en: { back: 'Back', next: 'Next', publish: 'Publish', pleaseWait: 'Please wait...' },
+  fr: { back: 'Retour', next: 'Suivant', publish: 'Publier', pleaseWait: 'Veuillez patienter...' },
+};
+
 export default function SellButtons({
   step = 0,
   totalSteps = 7,
@@ -16,7 +22,9 @@ export default function SellButtons({
   onBack,
   onNext,
   onSubmit,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
   const isLastStep = step === totalSteps - 1;
 
   return (
@@ -28,7 +36,7 @@ export default function SellButtons({
           disabled={loading}
         >
           <Text style={styles.secondaryText}>
-            Back
+            {l.back}
           </Text>
         </TouchableOpacity>
       ) : (
@@ -46,10 +54,10 @@ export default function SellButtons({
       >
         <Text style={styles.primaryText}>
           {loading
-            ? 'Please wait...'
+            ? l.pleaseWait
             : isLastStep
-            ? 'Publish'
-            : 'Next'}
+            ? l.publish
+            : l.next}
         </Text>
       </TouchableOpacity>
     </View>

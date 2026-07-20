@@ -11,10 +11,34 @@ import {
 import styles from './SellStyles';
 import { CURRENCIES } from './constants';
 
+const LABELS = {
+  ar: {
+    title: 'حدد السعر',
+    subtitle: 'اكتب سعر البيع واختار العملة.',
+    price: 'السعر',
+    currency: 'العملة',
+  },
+  en: {
+    title: 'Set Your Price',
+    subtitle: 'Enter the selling price and choose the currency.',
+    price: 'Price',
+    currency: 'Currency',
+  },
+  fr: {
+    title: 'Définir le prix',
+    subtitle: 'Entrez le prix de vente et choisissez la devise.',
+    price: 'Prix',
+    currency: 'Devise',
+  },
+};
+
 export default function StepPrice({
   form,
   setForm,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   const updateField = (key, value) => {
     setForm({
       ...form,
@@ -25,15 +49,15 @@ export default function StepPrice({
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.sectionTitle}>
-        Set Your Price
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Enter the selling price and choose the currency.
+        {l.subtitle}
       </Text>
 
       <Text style={styles.label}>
-        Price
+        {l.price}
       </Text>
 
       <TextInput
@@ -45,7 +69,7 @@ export default function StepPrice({
       />
 
       <Text style={styles.label}>
-        Currency
+        {l.currency}
       </Text>
 
       <View style={styles.row}>

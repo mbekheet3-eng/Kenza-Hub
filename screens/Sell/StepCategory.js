@@ -11,10 +11,18 @@ import {
 import styles from './SellStyles';
 import { supabase } from '../../services/supabase';
 
+const LABELS = {
+  ar: { title: 'اختار التصنيف', subtitle: 'اختار التصنيف الأنسب للقطعة بتاعتك.' },
+  en: { title: 'Choose Category', subtitle: 'Select the category that best matches your item.' },
+  fr: { title: 'Choisir la catégorie', subtitle: 'Sélectionnez la catégorie qui correspond le mieux à votre article.' },
+};
+
 export default function StepCategory({
   form,
   setForm,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +50,11 @@ export default function StepCategory({
     };
   }, []);
 
+  // الفئات جاية من الداتابيز وعندها عربي/إنجليزي بس (مفيش عمود فرنساوي)،
+  // فبالنسبة للفرنساوي بنستخدم الإنجليزي كبديل.
+  const categoryName = (category) =>
+    lang === 'ar' ? (category.name_ar || category.name_en) : (category.name_en || category.name_ar);
+
   const selectCategory = (category) => {
     setForm({
       ...form,
@@ -53,11 +66,11 @@ export default function StepCategory({
   return (
     <View>
       <Text style={styles.sectionTitle}>
-        Choose Category
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Select the category that best matches your item.
+        {l.subtitle}
       </Text>
 
       {loading ? (
@@ -82,7 +95,7 @@ export default function StepCategory({
                     selected && styles.chipTextSelected,
                   ]}
                 >
-                  {category.name_ar || category.name_en}
+                  {categoryName(category)}
                 </Text>
               </TouchableOpacity>
             );

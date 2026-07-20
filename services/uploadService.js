@@ -6,20 +6,32 @@ import { supabase } from './supabase';
  * bucket: product-images
  */
 export async function uploadImage(file, folder = 'products') {
+  console.log('START IMAGE UPLOAD');
+  console.log('BUCKET: product-images');
+  console.log('FILE:', file?.uri);
+
   try {
     if (!file) {
+      console.log('UPLOAD FAILED: no file object received');
       return null;
     }
+
+    console.log('FILE OBJECT:', JSON.stringify(file, null, 2));
 
     const fileExt = file.uri.split('.').pop();
     const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
+    console.log('FILE EXT:', fileExt);
+    console.log('FILE PATH:', filePath);
+    console.log('CONTENT TYPE:', file.mimeType || 'image/jpeg');
 
 
     // تحويل الصورة إلى Blob
     const response = await fetch(file.uri);
+    console.log('FETCH STATUS:', response.status);
+    console.log('FETCH OK:', response.ok);
     const blob = await response.blob();
-
+    console.log('BLOB SIZE:', blob.size, 'BLOB TYPE:', blob.type);
 
     const { error } = await supabase.storage
       .from('product-images')
@@ -29,8 +41,17 @@ export async function uploadImage(file, folder = 'products') {
       });
 
 
-    if (error) throw error;
+    if (error) {
+      console.log('UPLOAD FAILED:');
+      console.log('  message:', error.message);
+      console.log('  statusCode:', error.statusCode);
+      console.log('  details:', error.details);
+      console.log('  hint:', error.hint);
+      console.log('  full error object:', JSON.stringify(error));
+      throw error;
+    }
 
+    console.log('UPLOAD SUCCESS:', filePath);
 
     const { data } = supabase.storage
       .from('product-images')
@@ -39,9 +60,8 @@ export async function uploadImage(file, folder = 'products') {
 
     return data.publicUrl;
 
-
   } catch (error) {
-    console.log('uploadImage error:', error.message);
+    console.log('UPLOAD FAILED (catch):', error.message);
     return null;
   }
 }

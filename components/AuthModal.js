@@ -159,7 +159,7 @@ export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess 
                   {/* زرار Apple */}
                   <TouchableOpacity
                     style={[styles.authBtn, styles.appleBtn, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                    onPress={() => Alert.alert('Apple', 'قريبًا')}
+                    onPress={() => Alert.alert(t.apple, t.comingSoon)}
                   >
                     <View style={styles.appleIconWrap}>
                       <Text style={styles.appleIcon}></Text>
@@ -245,7 +245,7 @@ export default function AuthModal({ visible, closeModal, lang, isRTL, onSuccess 
                   {isLogin && (
                     <TouchableOpacity
                       style={{ alignSelf: isRTL ? 'flex-start' : 'flex-end', marginTop: 8 }}
-                      onPress={() => Alert.alert('', 'قريبًا')}
+                      onPress={() => Alert.alert('', t.comingSoon)}
                     >
                       <Text style={styles.forgotLink}>{t.forgotPassword}</Text>
                     </TouchableOpacity>

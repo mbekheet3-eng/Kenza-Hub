@@ -9,6 +9,31 @@ import {
 } from 'react-native';
 
 import styles from './SellStyles';
+import { CONDITION_LABELS, COLOR_LABELS, SIZE_LABELS } from './constants';
+
+const LABELS = {
+  ar: {
+    title: 'راجع إعلانك',
+    subtitle: 'من فضلك راجع كل البيانات قبل النشر.',
+    category: 'التصنيف', brand: 'الماركة', productTitle: 'العنوان',
+    size: 'المقاس', color: 'اللون', condition: 'الحالة',
+    description: 'الوصف', price: 'السعر',
+  },
+  en: {
+    title: 'Review Your Listing',
+    subtitle: 'Please review all information before publishing.',
+    category: 'Category', brand: 'Brand', productTitle: 'Title',
+    size: 'Size', color: 'Color', condition: 'Condition',
+    description: 'Description', price: 'Price',
+  },
+  fr: {
+    title: 'Vérifiez votre annonce',
+    subtitle: 'Veuillez vérifier toutes les informations avant de publier.',
+    category: 'Catégorie', brand: 'Marque', productTitle: 'Titre',
+    size: 'Taille', color: 'Couleur', condition: 'État',
+    description: 'Description', price: 'Prix',
+  },
+};
 
 const ReviewRow = ({ label, value }) => (
   <View style={styles.reviewCard}>
@@ -19,17 +44,19 @@ const ReviewRow = ({ label, value }) => (
   </View>
 );
 
-export default function StepReview({ form }) {
+export default function StepReview({ form, lang = 'ar' }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.sectionTitle}>
-        Review Your Listing
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Please review all information before publishing.
+        {l.subtitle}
       </Text>
 
       <ScrollView
@@ -52,42 +79,42 @@ export default function StepReview({ form }) {
       </ScrollView>
 
       <ReviewRow
-        label="Category"
+        label={l.category}
         value={form.category}
       />
 
       <ReviewRow
-        label="Brand"
+        label={l.brand}
         value={form.brand}
       />
 
       <ReviewRow
-        label="Title"
+        label={l.productTitle}
         value={form.title}
       />
 
       <ReviewRow
-        label="Size"
-        value={form.size}
+        label={l.size}
+        value={SIZE_LABELS[lang]?.[form.size] || form.size}
       />
 
       <ReviewRow
-        label="Color"
-        value={form.color}
+        label={l.color}
+        value={COLOR_LABELS[lang]?.[form.color] || form.color}
       />
 
       <ReviewRow
-        label="Condition"
-        value={form.condition}
+        label={l.condition}
+        value={CONDITION_LABELS[lang]?.[form.condition] || form.condition}
       />
 
       <ReviewRow
-        label="Description"
+        label={l.description}
         value={form.description}
       />
 
       <ReviewRow
-        label="Price"
+        label={l.price}
         value={
           form.price
             ? `${form.price} ${form.currency}`

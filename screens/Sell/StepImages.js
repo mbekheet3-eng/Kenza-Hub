@@ -15,13 +15,42 @@ import styles from './SellStyles';
 import { COLORS } from '../../theme/colors';
 import { MAX_IMAGES } from './constants';
 
-export default function StepImages({ form, setForm }) {
+const LABELS = {
+  ar: {
+    title: 'ضيف صور المنتج',
+    subtitle: 'ارفع صور واضحة للمنتج بتاعك.',
+    maxReachedTitle: 'وصلت للحد الأقصى',
+    maxReachedMsg: (n) => `تقدر ترفع لغاية ${n} صور.`,
+    permissionTitle: 'محتاجين إذن',
+    permissionMsg: 'من فضلك اسمح بالوصول لمعرض الصور.',
+    addPhoto: 'إضافة صورة',
+  },
+  en: {
+    title: 'Add Product Photos',
+    subtitle: 'Upload clear images of your product.',
+    maxReachedTitle: 'Maximum reached',
+    maxReachedMsg: (n) => `You can upload up to ${n} images.`,
+    permissionTitle: 'Permission required',
+    permissionMsg: 'Please allow photo library access.',
+    addPhoto: 'Add Photo',
+  },
+  fr: {
+    title: 'Ajouter des photos du produit',
+    subtitle: 'Téléchargez des photos claires de votre produit.',
+    maxReachedTitle: 'Maximum atteint',
+    maxReachedMsg: (n) => `Vous pouvez télécharger jusqu'à ${n} photos.`,
+    permissionTitle: 'Autorisation requise',
+    permissionMsg: 'Veuillez autoriser l\'accès à la galerie de photos.',
+    addPhoto: 'Ajouter une photo',
+  },
+};
+
+export default function StepImages({ form, setForm, lang = 'ar' }) {
+  const l = LABELS[lang] || LABELS.ar;
+
   const pickImage = async () => {
     if (form.images.length >= MAX_IMAGES) {
-      Alert.alert(
-        'Maximum reached',
-        `You can upload up to ${MAX_IMAGES} images.`
-      );
+      Alert.alert(l.maxReachedTitle, l.maxReachedMsg(MAX_IMAGES));
       return;
     }
 
@@ -29,10 +58,7 @@ export default function StepImages({ form, setForm }) {
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        'Permission required',
-        'Please allow photo library access.'
-      );
+      Alert.alert(l.permissionTitle, l.permissionMsg);
       return;
     }
 
@@ -63,11 +89,11 @@ export default function StepImages({ form, setForm }) {
   return (
     <View>
       <Text style={styles.sectionTitle}>
-        Add Product Photos
+        {l.title}
       </Text>
 
       <Text style={styles.subtitle}>
-        Upload clear images of your product.
+        {l.subtitle}
       </Text>
 
       <ScrollView
@@ -116,7 +142,7 @@ export default function StepImages({ form, setForm }) {
             />
 
             <Text style={styles.addImageText}>
-              Add Photo
+              {l.addPhoto}
             </Text>
           </TouchableOpacity>
         )}
