@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, I18nManager } from 'react-native';
+import { SafeAreaView, StatusBar, I18nManager, ActivityIndicator } from 'react-native';
 import { COLORS } from './theme/colors';
 import WelcomeScreen from './screens/welcomescreen';
 import HomeScreen from './screens/HomeScreen';
@@ -13,7 +13,7 @@ import SearchingScreen from './screens/SearchingScreen';
 import SearchByImageScreen from './screens/SearchByImageScreen';
 import SearchPreviewScreen from './screens/SearchPreviewScreen';
 import SearchResult from './screens/SearchResult';
-import { onAuthStateChange } from './services/auth';
+import { onAuthStateChange, getSession } from './services/auth';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
@@ -25,15 +25,34 @@ export default function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchParams, setSearchParams] = useState({});
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    console.log('[Auth] App Started');
+    console.log('[Auth] Checking saved session...');
+
+    getSession().then((session) => {
+      console.log(session ? '[Auth] Session Restored' : '[Auth] No Saved Session');
+      if (!mounted) return;
+      setUser(session?.user || null);
+      setCurrentScreen(session?.user ? 'home' : 'welcome');
+      setAuthLoading(false);
+    });
+
     const { data: { subscription } } = onAuthStateChange((currentUser) => {
+      if (!mounted) return;
       setUser(currentUser);
       if (currentUser) {
         setCurrentScreen('home');
       }
     });
-    return () => subscription?.unsubscribe();
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const navigateTo = (screen, params = null) => {
@@ -44,6 +63,15 @@ export default function App() {
     }
     setCurrentScreen(screen);
   };
+
+  if (authLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center' }}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
 <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white, paddingTop: 16 }}>
@@ -71,17 +99,19 @@ export default function App() {
 
       {currentScreen === 'searching' && (
         <SearchingScreen
+          lang={lang}
           navigateTo={navigateTo}
           searchQuery={searchParams?.query || ''}
         />
       )}
 
       {currentScreen === 'searchByImage' && (
-        <SearchByImageScreen navigateTo={navigateTo} />
+        <SearchByImageScreen lang={lang} navigateTo={navigateTo} />
       )}
 
       {currentScreen === 'searchPreview' && (
         <SearchPreviewScreen
+          lang={lang}
           navigateTo={navigateTo}
           imageUri={searchParams?.imageUri}
         />
@@ -89,6 +119,7 @@ export default function App() {
 
       {currentScreen === 'searchResult' && (
         <SearchResult
+          lang={lang}
           navigateTo={navigateTo}
           searchQuery={searchParams?.query || ''}
         />

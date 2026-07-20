@@ -9,10 +9,33 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+const LABELS = {
+  ar: {
+    title: 'معاينة الصورة',
+    description: 'تأكد أن الصورة واضحة للحصول على أفضل النتائج.',
+    startSearch: 'ابدأ البحث',
+    changeImage: 'اختيار صورة أخرى',
+  },
+  en: {
+    title: 'Image Preview',
+    description: 'Make sure the photo is clear for the best results.',
+    startSearch: 'Start Search',
+    changeImage: 'Choose another photo',
+  },
+  fr: {
+    title: 'Aperçu de l\'image',
+    description: 'Assurez-vous que la photo est claire pour de meilleurs résultats.',
+    startSearch: 'Lancer la recherche',
+    changeImage: 'Choisir une autre photo',
+  },
+};
+
 export default function SearchPreviewScreen({
   imageUri,
   navigateTo,
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
   return (
     <SafeAreaView style={styles.container}>
 
@@ -30,7 +53,7 @@ export default function SearchPreviewScreen({
         </TouchableOpacity>
 
         <Text style={styles.title}>
-          معاينة الصورة
+          {l.title}
         </Text>
 
         <View style={{ width: 40 }} />
@@ -48,7 +71,7 @@ export default function SearchPreviewScreen({
       </View>
 
       <Text style={styles.description}>
-        تأكد أن الصورة واضحة للحصول على أفضل النتائج.
+        {l.description}
       </Text>
 
       <TouchableOpacity
@@ -66,7 +89,7 @@ export default function SearchPreviewScreen({
         />
 
         <Text style={styles.searchText}>
-          ابدأ البحث
+          {l.startSearch}
         </Text>
 
       </TouchableOpacity>
@@ -76,7 +99,7 @@ export default function SearchPreviewScreen({
         onPress={() => navigateTo('searchByImage')}
       >
         <Text style={styles.changeText}>
-          اختيار صورة أخرى
+          {l.changeImage}
         </Text>
       </TouchableOpacity>
 

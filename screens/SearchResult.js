@@ -47,10 +47,36 @@ const PRODUCTS = [
   },
 ];
 
+const LABELS = {
+  ar: {
+    searchPlaceholder: 'دور على منتج...',
+    resultsFound: (n) => `${n} نتيجة`,
+    noResultsTitle: 'مفيش نتايج',
+    noResultsText: 'جرب كلمة تانية أو تصفح كل المنتجات.',
+    browseProducts: 'تصفح المنتجات',
+  },
+  en: {
+    searchPlaceholder: 'Search products...',
+    resultsFound: (n) => `${n} Results Found`,
+    noResultsTitle: 'No Results Found',
+    noResultsText: 'Try another keyword or browse all products.',
+    browseProducts: 'Browse Products',
+  },
+  fr: {
+    searchPlaceholder: 'Rechercher des produits...',
+    resultsFound: (n) => `${n} résultats trouvés`,
+    noResultsTitle: 'Aucun résultat',
+    noResultsText: 'Essayez un autre mot-clé ou parcourez tous les produits.',
+    browseProducts: 'Parcourir les produits',
+  },
+};
+
 export default function SearchResultScreen({
   navigateTo,
   searchQuery = '',
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
   const [query, setQuery] = useState(searchQuery);
 
   const filteredProducts = PRODUCTS.filter((item) =>
@@ -114,13 +140,13 @@ export default function SearchResultScreen({
             style={styles.input}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search products..."
+            placeholder={l.searchPlaceholder}
           />
         </View>
       </View>
 
       <Text style={styles.results}>
-        {filteredProducts.length} Results Found
+        {l.resultsFound(filteredProducts.length)}
       </Text>
 
       {filteredProducts.length === 0 ? (
@@ -132,11 +158,11 @@ export default function SearchResultScreen({
           />
 
           <Text style={styles.emptyTitle}>
-            No Results Found
+            {l.noResultsTitle}
           </Text>
 
           <Text style={styles.emptyText}>
-            Try another keyword or browse all products.
+            {l.noResultsText}
           </Text>
 
           <TouchableOpacity
@@ -146,7 +172,7 @@ export default function SearchResultScreen({
             }
           >
             <Text style={styles.buttonText}>
-              Browse Products
+              {l.browseProducts}
             </Text>
           </TouchableOpacity>
         </View>

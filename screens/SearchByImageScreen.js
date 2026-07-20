@@ -12,7 +12,38 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-export default function SearchByImageScreen({ navigateTo }) {
+const LABELS = {
+  ar: {
+    title: 'البحث بالصورة',
+    searchSimilar: 'البحث عن منتجات مشابهة',
+    changeImage: 'اختيار صورة أخرى',
+    heroTitle: 'ابحث عن منتج بصورة واحدة',
+    heroDesc: 'التقط صورة أو اختر صورة من المعرض\nللعثور على منتجات مشابهة.',
+    takePhoto: 'التقاط صورة',
+    pickGallery: 'اختيار من المعرض',
+  },
+  en: {
+    title: 'Search by Image',
+    searchSimilar: 'Search for similar products',
+    changeImage: 'Choose another photo',
+    heroTitle: 'Find a product with one photo',
+    heroDesc: 'Take a photo or pick one from your\ngallery to find similar products.',
+    takePhoto: 'Take a Photo',
+    pickGallery: 'Choose from Gallery',
+  },
+  fr: {
+    title: 'Recherche par image',
+    searchSimilar: 'Rechercher des produits similaires',
+    changeImage: 'Choisir une autre photo',
+    heroTitle: 'Trouvez un produit avec une photo',
+    heroDesc: 'Prenez une photo ou choisissez-en\nune pour trouver des produits similaires.',
+    takePhoto: 'Prendre une photo',
+    pickGallery: 'Choisir depuis la galerie',
+  },
+};
+
+export default function SearchByImageScreen({ navigateTo, lang = 'ar' }) {
+  const l = LABELS[lang] || LABELS.ar;
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -78,7 +109,7 @@ export default function SearchByImageScreen({ navigateTo }) {
         </TouchableOpacity>
 
         <Text style={styles.title}>
-          البحث بالصورة
+          {l.title}
         </Text>
 
         <View style={{ width: 40 }} />
@@ -106,7 +137,7 @@ export default function SearchByImageScreen({ navigateTo }) {
                 />
 
                 <Text style={styles.searchText}>
-                  البحث عن منتجات مشابهة
+                  {l.searchSimilar}
                 </Text>
               </>
             )}
@@ -117,7 +148,7 @@ export default function SearchByImageScreen({ navigateTo }) {
             onPress={() => setImage(null)}
           >
             <Text style={styles.changeText}>
-              اختيار صورة أخرى
+              {l.changeImage}
             </Text>
           </TouchableOpacity>
         </View>
@@ -131,12 +162,11 @@ export default function SearchByImageScreen({ navigateTo }) {
             />
 
             <Text style={styles.heroTitle}>
-              ابحث عن منتج بصورة واحدة
+              {l.heroTitle}
             </Text>
 
             <Text style={styles.heroDesc}>
-              التقط صورة أو اختر صورة من المعرض
-              للعثور على منتجات مشابهة.
+              {l.heroDesc}
             </Text>
           </View>
 
@@ -151,7 +181,7 @@ export default function SearchByImageScreen({ navigateTo }) {
             />
 
             <Text style={styles.cardTitle}>
-              التقاط صورة
+              {l.takePhoto}
             </Text>
           </TouchableOpacity>
 
@@ -166,7 +196,7 @@ export default function SearchByImageScreen({ navigateTo }) {
             />
 
             <Text style={styles.cardTitle}>
-              اختيار من المعرض
+              {l.pickGallery}
             </Text>
           </TouchableOpacity>
         </>

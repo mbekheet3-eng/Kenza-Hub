@@ -10,10 +10,30 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 
+const LABELS = {
+  ar: {
+    title: 'جاري البحث...',
+    lookingFor: 'بندور على أفضل النتائج...',
+    description: 'استنى شوية إحنا بنبحث في آلاف\nالمنتجات على كنزة هب.',
+  },
+  en: {
+    title: 'Searching...',
+    lookingFor: 'Looking for the best matches...',
+    description: 'Please wait while we search through\nthousands of products on Kenza Hub.',
+  },
+  fr: {
+    title: 'Recherche en cours...',
+    lookingFor: 'À la recherche des meilleurs résultats...',
+    description: 'Veuillez patienter pendant que nous\ncherchons parmi des milliers de produits.',
+  },
+};
+
 export default function SearchingScreen({
   navigateTo,
   searchQuery = '',
+  lang = 'ar',
 }) {
+  const l = LABELS[lang] || LABELS.ar;
   useEffect(() => {
     const timer = setTimeout(() => {
       if (navigateTo) {
@@ -57,7 +77,7 @@ navigateTo('searchResult', {
         />
 
         <Text style={styles.title}>
-          Searching...
+          {l.title}
         </Text>
 
         {searchQuery ? (
@@ -66,13 +86,12 @@ navigateTo('searchResult', {
           </Text>
         ) : (
           <Text style={styles.query}>
-            Looking for the best matches...
+            {l.lookingFor}
           </Text>
         )}
 
         <Text style={styles.description}>
-          Please wait while we search through
-          thousands of products on Kenza Hub.
+          {l.description}
         </Text>
       </View>
     </SafeAreaView>
