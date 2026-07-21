@@ -21,6 +21,13 @@ export async function uploadImage(file, folder = 'products') {
 
     console.log('FILE OBJECT:', JSON.stringify(file, null, 2));
 
+    // Diagnostic log before reading file
+    console.log({
+      uri: file.uri,
+      mimeType: file.mimeType,
+      fileName: file.fileName,
+    });
+
     const fileExt = file.uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
