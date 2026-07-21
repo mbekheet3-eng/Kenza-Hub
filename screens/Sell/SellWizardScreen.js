@@ -18,6 +18,7 @@ import { INITIAL_FORM } from './constants';
 import { addProduct, addProductImages } from '../../services/productService';
 import { getOrCreateSellerProfileId } from '../../services/sellerProfile';
 import { uploadMultipleImages } from '../../services/uploadService';
+import { isHomeCategory } from '../../data/sizes';
 
 // ترتيب الخطوات لازم يتطابق مع STEPS في SellProgress.js
 // ومع رقم الخطوة (index) في validateStep داخل validation.js
@@ -79,14 +80,33 @@ export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublishe
       Alert.alert(a.notice, error);
       return;
     }
-    if (!isLastStep) setStep(step + 1);
+
+    let nextStep = step + 1;
+
+    // Skip StepBrand (step 2) if home category
+    // Jump directly from StepCategory (step 1) to StepDetails (step 3)
+    if (step === 1 && isHomeCategory(form.categoryId)) {
+      nextStep = 3;
+    }
+
+    if (nextStep < STEP_COMPONENTS.length) {
+      setStep(nextStep);
+    }
   };
 
   const goBack = () => {
     if (step === 0) {
       onBack && onBack();
     } else {
-      setStep(step - 1);
+      // When going back from StepDetails (step 3) after home category,
+      // return to StepCategory (step 1), skipping StepBrand (step 2)
+      let previousStep = step - 1;
+
+      if (step === 3 && isHomeCategory(form.categoryId)) {
+        previousStep = 1;
+      }
+
+      setStep(previousStep);
     }
   };
 

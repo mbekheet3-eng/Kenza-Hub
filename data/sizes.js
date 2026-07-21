@@ -130,3 +130,13 @@ export const SIZE_LABELS = {
 };
 
 export default SIZE_SETS;
+
+/**
+ * Check if a category is the home category.
+ * This is used to determine UI behavior (skip brand step, hide size/color, etc.)
+ * @param {string} categoryId - The Supabase category ID
+ * @returns {boolean} True if this is the home category
+ */
+export function isHomeCategory(categoryId) {
+  return categoryId === '1e69453d-059c-4a7c-a81a-be0fbe9bc9f1';
+}
