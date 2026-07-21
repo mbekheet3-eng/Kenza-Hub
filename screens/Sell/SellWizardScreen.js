@@ -65,6 +65,47 @@ const ALERTS = {
   },
 };
 
+/**
+ * Format upload error into a readable message for user
+ * Extracts: message, statusCode, error, details, hint
+ */
+function formatUploadError(err) {
+  console.log('[ERROR] Full error object:', JSON.stringify(err, null, 2));
+
+  // Extract upload error details if available
+  const uploadErr = err.uploadError || {};
+  
+  // Build formatted message with available fields only
+  const parts = [];
+
+  if (uploadErr.message) {
+    parts.push(`Message:\n${uploadErr.message}`);
+  }
+
+  if (uploadErr.statusCode) {
+    parts.push(`Status: ${uploadErr.statusCode}`);
+  }
+
+  if (uploadErr.error) {
+    parts.push(`Error: ${uploadErr.error}`);
+  }
+
+  if (uploadErr.details) {
+    parts.push(`Details:\n${uploadErr.details}`);
+  }
+
+  if (uploadErr.hint) {
+    parts.push(`Hint:\n${uploadErr.hint}`);
+  }
+
+  // If no structured error, use message
+  if (parts.length === 0) {
+    return err.message || 'Unknown error occurred';
+  }
+
+  return parts.join('\n\n');
+}
+
 export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublished }) {
   const a = ALERTS[lang] || ALERTS.ar;
   const [step, setStep] = useState(0);
@@ -168,10 +209,10 @@ export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublishe
     } catch (err) {
       setLoading(false);
       
-      // Display raw error from upload or any other stage
-      const errorMessage = err.message || a.unexpected;
+      // Format and display the error
+      const errorMessage = formatUploadError(err);
       
-      console.log('handleSubmit error:', errorMessage);
+      console.log('[handleSubmit] Caught error, displaying to user');
       
       Alert.alert(a.error, errorMessage);
     }

@@ -1,10 +1,9 @@
 import { supabase } from './supabase';
-import { Alert } from 'react-native';
 
 /**
  * رفع صورة إلى Storage
  * bucket: product-images
- * throws: Error with Supabase details
+ * throws: Error with formatted Supabase details
  */
 export async function uploadImage(file, folder = 'products') {
   console.log('START IMAGE UPLOAD');
@@ -41,23 +40,23 @@ export async function uploadImage(file, folder = 'products') {
       });
 
     if (error) {
-      console.log('UPLOAD FAILED:');
+      console.log('UPLOAD FAILED - Supabase Error:');
+      console.log('Full error object:', JSON.stringify(error, null, 2));
       console.log('  message:', error.message);
       console.log('  statusCode:', error.statusCode);
+      console.log('  error:', error.error);
       console.log('  details:', error.details);
       console.log('  hint:', error.hint);
-      console.log('  full error object:', JSON.stringify(error));
       
-      // Create detailed error message to throw
-      const errorDetails = {
+      // Create error object with all fields for caller to format
+      const err = new Error();
+      err.uploadError = {
         message: error.message,
         statusCode: error.statusCode,
+        error: error.error,
         details: error.details,
         hint: error.hint,
       };
-      
-      const err = new Error(JSON.stringify(errorDetails, null, 2));
-      err.supabaseError = error;
       throw err;
     }
 
@@ -71,6 +70,7 @@ export async function uploadImage(file, folder = 'products') {
 
   } catch (error) {
     console.log('UPLOAD FAILED (catch):', error.message);
+    console.log('Full error object:', JSON.stringify(error, null, 2));
     // Re-throw the error so caller can handle it
     throw error;
   }
@@ -96,6 +96,7 @@ export async function uploadMultipleImages(images = []) {
 
   } catch (error) {
     console.log('uploadMultipleImages error:', error.message);
+    console.log('Full error object:', JSON.stringify(error, null, 2));
     // Re-throw the error so handleSubmit can catch and display it
     throw error;
   }
