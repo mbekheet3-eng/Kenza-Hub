@@ -94,6 +94,10 @@ export default function StepDetails({
 
   // Get sizes for the selected category; falls back to clothing if none selected
   const applicableSizes = getSizesForCategory(form.categoryId);
+  const showsSize = applicableSizes.length > 0;
+  
+  // Check if this is a home category (no size, no color, no brand needed)
+  const isHomeCategory = form.categoryId === '1e69453d-059c-4a7c-a81a-be0fbe9bc9f1';
 
   return (
     <ScrollView
@@ -112,9 +116,10 @@ export default function StepDetails({
       />
 
       {/* Only show size chips if the category uses sizes; hide completely for home category */}
-      {applicableSizes.length > 0 && renderChips(l.size, 'size', applicableSizes, SIZE_LABELS)}
+      {showsSize && renderChips(l.size, 'size', applicableSizes, SIZE_LABELS)}
 
-      {renderChips(l.color, 'color', COLORS, COLOR_LABELS)}
+      {/* Only show color chips for clothes, shoes, kids (not home) */}
+      {!isHomeCategory && renderChips(l.color, 'color', COLORS, COLOR_LABELS)}
 
       {renderChips(l.condition, 'condition', CONDITIONS, CONDITION_LABELS)}
     </ScrollView>

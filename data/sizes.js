@@ -71,19 +71,20 @@ export function getSizesForCategory(categoryId) {
 
 /**
  * Multilingual labels for sizes.
- * Each size is a key; only sizes with non-English translations need entries.
- * Sizes not in these maps will display as-is.
+ * Arabic translations use market-standard transliterations (XS → إكس سمول, etc.)
+ * English and French use their standard forms.
  */
 export const SIZE_LABELS = {
   ar: {
-    'Free Size': 'مقاس واحد',
-    'XS': 'إكسترا صغير',
-    'S': 'صغير',
-    'M': 'متوسط',
-    'L': 'كبير',
-    'XL': 'إكسترا كبير',
-    'XXL': 'إكسترا إكسترا كبير',
-    '3XL': '3X كبير',
+    // Clothing sizes
+    'XS': 'إكس سمول',
+    'S': 'سمول',
+    'M': 'ميديوم',
+    'L': 'لارج',
+    'XL': 'إكس لارج',
+    'XXL': '2 إكس لارج',
+    '3XL': '3 إكس لارج',
+    // Kids sizes
     '0-3M': '0-3 أشهر',
     '3-6M': '3-6 أشهر',
     '6-12M': '6-12 شهر',
@@ -97,19 +98,21 @@ export const SIZE_LABELS = {
     '8-10Y': '8-10 سنة',
     '10-12Y': '10-12 سنة',
     '12-14Y': '12-14 سنة',
+    // All categories
+    'Free Size': 'مقاس واحد',
   },
   en: {
     'Free Size': 'Free Size',
   },
   fr: {
+    'XS': 'XS',
+    'S': 'S',
+    'M': 'M',
+    'L': 'L',
+    'XL': 'XL',
+    'XXL': '2XL',
+    '3XL': '3XL',
     'Free Size': 'Taille unique',
-    'XS': 'Extra petit',
-    'S': 'Petit',
-    'M': 'Moyen',
-    'L': 'Grand',
-    'XL': 'Extra grand',
-    'XXL': 'Extra extra grand',
-    '3XL': '3X grand',
     '0-3M': '0-3 mois',
     '3-6M': '3-6 mois',
     '6-12M': '6-12 mois',

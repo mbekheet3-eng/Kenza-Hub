@@ -1,4 +1,6 @@
-// screens/sell/validation.js
+// screens/Sell/validation.js
+
+import { getSizesForCategory } from '../../data/sizes';
 
 const MESSAGES = {
   ar: {
@@ -56,6 +58,12 @@ export function validateCategory(form, lang = 'ar') {
 }
 
 export function validateBrand(form, lang = 'ar') {
+  // Home category doesn't need brand
+  const isHomeCategory = form.categoryId === '1e69453d-059c-4a7c-a81a-be0fbe9bc9f1';
+  if (isHomeCategory) {
+    return null;
+  }
+
   if (!form.brand || form.brand.trim() === '') {
     return t(lang).brand;
   }
@@ -67,11 +75,15 @@ export function validateDetails(form, lang = 'ar') {
     return t(lang).title;
   }
 
-  if (!form.size) {
+  // Check if category uses sizes
+  const applicableSizes = getSizesForCategory(form.categoryId);
+  if (applicableSizes.length > 0 && !form.size) {
     return t(lang).size;
   }
 
-  if (!form.color) {
+  // Home category doesn't need color
+  const isHomeCategory = form.categoryId === '1e69453d-059c-4a7c-a81a-be0fbe9bc9f1';
+  if (!isHomeCategory && !form.color) {
     return t(lang).color;
   }
 
