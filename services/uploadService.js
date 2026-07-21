@@ -2,123 +2,179 @@ import { supabase } from './supabase';
 import * as FileSystem from 'expo-file-system';
 
 /**
- * رفع صورة إلى Storage
+ * رفع صورة إلى Storage - TRACING VERSION
  * bucket: product-images
- * Handles both file:// (iOS) and content:// (Android) URIs
- * throws: Error with formatted Supabase details
+ * Detailed logging after EVERY step
  */
 export async function uploadImage(file, folder = 'products') {
-  console.log('START IMAGE UPLOAD');
-  console.log('BUCKET: product-images');
-  console.log('FILE URI:', file?.uri);
-  console.log('FILE MIMETYPE:', file?.mimeType);
+  console.log('========== IMAGE UPLOAD START ==========');
 
+  // STEP 1: Log selected image object
   try {
-    if (!file || !file.uri) {
-      console.log('UPLOAD FAILED: no file URI received');
-      throw new Error('No file URI received');
-    }
-
-    console.log('FILE OBJECT:', JSON.stringify(file, null, 2));
-
-    // Diagnostic log before reading file
+    console.log('[STEP 1] Selected image object');
     console.log({
-      uri: file.uri,
-      mimeType: file.mimeType,
-      fileName: file.fileName,
+      uri: file?.uri,
+      mimeType: file?.mimeType,
+      fileName: file?.fileName,
+      fileSize: file?.fileSize,
     });
 
-    const fileExt = file.uri.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${folder}/${fileName}`;
-    
-    console.log('FILE EXT:', fileExt);
-    console.log('FILE PATH:', filePath);
-    console.log('CONTENT TYPE:', file.mimeType || 'image/jpeg');
+    if (!file || !file.uri) {
+      throw new Error('No file URI received');
+    }
+  } catch (error) {
+    console.log('[STEP 1 ERROR]', error.message, error.stack);
+    throw error;
+  }
 
-    // Read file as base64 using expo-file-system
-    // This works with both file:// (iOS) and content:// (Android) URIs
-    console.log('Reading file from URI...');
+  // STEP 2: Before FileSystem.readAsStringAsync()
+  try {
+    console.log('[STEP 2] Before FileSystem.readAsStringAsync()');
+    console.log('Attempting to read:', file.uri);
+
+    // STEP 3: After readAsStringAsync()
     const base64Data = await FileSystem.readAsStringAsync(file.uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    
-    console.log('File read successfully, size:', base64Data.length);
 
-    // Convert base64 to Blob for Supabase upload
-    const blobResponse = await fetch(`data:${file.mimeType || 'image/jpeg'};base64,${base64Data}`);
+    console.log('[STEP 3] After readAsStringAsync()');
+    console.log({
+      base64Length: base64Data.length,
+      base64Preview: base64Data.substring(0, 50) + '...',
+    });
+
+    // STEP 4: Before Blob creation
+    console.log('[STEP 4] Before Blob creation');
+    const dataUri = `data:${file.mimeType || 'image/jpeg'};base64,${base64Data}`;
+    console.log('Data URI length:', dataUri.length);
+
+    const blobResponse = await fetch(dataUri);
+    console.log('Fetch response status:', blobResponse.status);
+
     const blob = await blobResponse.blob();
-    
-    console.log('BLOB SIZE:', blob.size, 'BLOB TYPE:', blob.type);
 
-    // Upload to Supabase Storage
-    const { error } = await supabase.storage
+    // STEP 5: After Blob creation
+    console.log('[STEP 5] After Blob creation');
+    console.log({
+      blobSize: blob.size,
+      blobType: blob.type,
+    });
+
+    // STEP 6: Immediately before supabase.storage.upload()
+    const fileExt = file.uri.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    console.log('[STEP 6] Immediately before supabase.storage.upload()');
+    console.log({
+      bucket: 'product-images',
+      filePath: filePath,
+      contentType: file.mimeType || 'image/jpeg',
+      upsert: false,
+      blobSize: blob.size,
+    });
+
+    // STEP 7: Immediately after upload()
+    console.log('[STEP 7] Calling supabase.storage.upload()...');
+    const uploadResult = await supabase.storage
       .from('product-images')
       .upload(filePath, blob, {
         contentType: file.mimeType || 'image/jpeg',
         upsert: false,
       });
 
-    if (error) {
-      console.log('UPLOAD FAILED - Supabase Error:');
-      console.log('Full error object:', JSON.stringify(error, null, 2));
-      console.log('  message:', error.message);
-      console.log('  statusCode:', error.statusCode);
-      console.log('  error:', error.error);
-      console.log('  details:', error.details);
-      console.log('  hint:', error.hint);
-      
-      // Create error object with all fields for caller to format
+    console.log('[STEP 7] After supabase.storage.upload()');
+    console.log({
+      data: uploadResult.data,
+      error: uploadResult.error,
+    });
+
+    if (uploadResult.error) {
+      console.log('[STEP 7 ERROR] Upload failed with error:');
+      console.log({
+        message: uploadResult.error.message,
+        statusCode: uploadResult.error.statusCode,
+        error: uploadResult.error.error,
+        details: uploadResult.error.details,
+        hint: uploadResult.error.hint,
+      });
+
       const err = new Error();
       err.uploadError = {
-        message: error.message,
-        statusCode: error.statusCode,
-        error: error.error,
-        details: error.details,
-        hint: error.hint,
+        message: uploadResult.error.message,
+        statusCode: uploadResult.error.statusCode,
+        error: uploadResult.error.error,
+        details: uploadResult.error.details,
+        hint: uploadResult.error.hint,
       };
       throw err;
     }
 
-    console.log('UPLOAD SUCCESS:', filePath);
-
+    // Get public URL
     const { data } = supabase.storage
       .from('product-images')
       .getPublicUrl(filePath);
 
-    console.log('PUBLIC URL:', data.publicUrl);
+    console.log('[SUCCESS] Upload completed');
+    console.log({
+      publicUrl: data.publicUrl,
+    });
+
+    console.log('========== IMAGE UPLOAD END (SUCCESS) ==========');
     return data.publicUrl;
 
   } catch (error) {
-    console.log('UPLOAD FAILED (catch):', error.message);
-    console.log('Full error object:', JSON.stringify(error, null, 2));
-    // Re-throw the error so caller can handle it
+    // STEP 8: If ANY exception happens
+    console.log('========== IMAGE UPLOAD END (ERROR) ==========');
+    console.log('[STEP 8 EXCEPTION]');
+    console.log({
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorName: error.name,
+    });
+
+    // Try to extract line number from stack
+    const stackLines = (error.stack || '').split('\n');
+    console.log('[STEP 8] Full stack trace:');
+    stackLines.forEach((line, index) => {
+      console.log(`  Line ${index}: ${line}`);
+    });
+
     throw error;
   }
 }
 
 /**
- * رفع مجموعة صور
- * throws: Error from first failed upload, or from uploadImage
+ * رفع مجموعة صور - TRACING VERSION
  */
 export async function uploadMultipleImages(images = []) {
+  console.log('========== UPLOAD MULTIPLE START ==========');
+  console.log('Total images to upload:', images.length);
+
   try {
     const uploadedImages = [];
 
-    for (const image of images) {
-      const url = await uploadImage(image);
+    for (let i = 0; i < images.length; i++) {
+      console.log(`\n--- Uploading image ${i + 1}/${images.length} ---`);
+      const url = await uploadImage(images[i]);
 
       if (url) {
         uploadedImages.push(url);
+        console.log(`Image ${i + 1} uploaded successfully`);
       }
     }
 
+    console.log('========== UPLOAD MULTIPLE END (SUCCESS) ==========');
+    console.log('Total successfully uploaded:', uploadedImages.length);
     return uploadedImages;
 
   } catch (error) {
-    console.log('uploadMultipleImages error:', error.message);
-    console.log('Full error object:', JSON.stringify(error, null, 2));
-    // Re-throw the error so handleSubmit can catch and display it
+    console.log('========== UPLOAD MULTIPLE END (ERROR) ==========');
+    console.log('Upload failed at image index');
+    console.log({
+      errorMessage: error.message,
+      errorStack: error.stack,
+    });
     throw error;
   }
 }
