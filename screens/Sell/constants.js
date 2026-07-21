@@ -1,4 +1,4 @@
-// screens/sell/constants.js
+// screens/Sell/constants.js
 
 export const MAX_IMAGES = 8;
 
@@ -28,16 +28,8 @@ export const CONDITIONS = [
   'Fair',
 ];
 
-export const SIZES = [
-  'XS',
-  'S',
-  'M',
-  'L',
-  'XL',
-  'XXL',
-  '3XL',
-  'Free Size',
-];
+// NOTE: SIZES has been moved to data/sizes.js for category-specific mapping.
+// If you need sizes here for backward compatibility, import from data/sizes.js
 
 export const COLORS = [
   'Black',
@@ -107,11 +99,7 @@ export const COLOR_LABELS = {
   },
 };
 
-export const SIZE_LABELS = {
-  ar: { 'Free Size': 'مقاس واحد' },
-  en: { 'Free Size': 'Free Size' },
-  fr: { 'Free Size': 'Taille unique' },
-};
+// NOTE: SIZE_LABELS has been moved to data/sizes.js for category-specific mapping.
 
 export const INITIAL_FORM = {
   images: [],

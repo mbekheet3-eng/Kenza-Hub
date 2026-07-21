@@ -1,4 +1,4 @@
-// screens/sell/StepDetails.js
+// screens/Sell/StepDetails.js
 
 import React from 'react';
 import {
@@ -11,13 +11,13 @@ import {
 
 import styles from './SellStyles';
 import {
-  SIZES,
   COLORS,
   CONDITIONS,
-  SIZE_LABELS,
   COLOR_LABELS,
   CONDITION_LABELS,
 } from './constants';
+
+import { getSizesForCategory, SIZE_LABELS } from '../../data/sizes';
 
 const LABELS = {
   ar: {
@@ -92,6 +92,9 @@ export default function StepDetails({
     </>
   );
 
+  // Get sizes for the selected category; falls back to clothing if none selected
+  const applicableSizes = getSizesForCategory(form.categoryId);
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -108,7 +111,8 @@ export default function StepDetails({
         onChangeText={(text) => updateField('title', text)}
       />
 
-      {renderChips(l.size, 'size', SIZES, SIZE_LABELS)}
+      {/* Only show size chips if the category uses sizes; hide completely for home category */}
+      {applicableSizes.length > 0 && renderChips(l.size, 'size', applicableSizes, SIZE_LABELS)}
 
       {renderChips(l.color, 'color', COLORS, COLOR_LABELS)}
 

@@ -1,4 +1,4 @@
-// screens/sell/StepImages.js
+// screens/Sell/StepImages.js
 
 import React from 'react';
 import {
@@ -21,44 +21,79 @@ const LABELS = {
     subtitle: 'ارفع صور واضحة للمنتج بتاعك.',
     maxReachedTitle: 'وصلت للحد الأقصى',
     maxReachedMsg: (n) => `تقدر ترفع لغاية ${n} صور.`,
-    permissionTitle: 'محتاجين إذن',
-    permissionMsg: 'من فضلك اسمح بالوصول لمعرض الصور.',
-    addPhoto: 'إضافة صورة',
+    cameraPermissionTitle: 'محتاجين إذن',
+    cameraPermissionMsg: 'من فضلك اسمح بالوصول للكاميرا.',
+    libraryPermissionTitle: 'محتاجين إذن',
+    libraryPermissionMsg: 'من فضلك اسمح بالوصول لمعرض الصور.',
+    camera: 'كاميرا',
+    gallery: 'معرض',
   },
   en: {
     title: 'Add Product Photos',
     subtitle: 'Upload clear images of your product.',
     maxReachedTitle: 'Maximum reached',
     maxReachedMsg: (n) => `You can upload up to ${n} images.`,
-    permissionTitle: 'Permission required',
-    permissionMsg: 'Please allow photo library access.',
-    addPhoto: 'Add Photo',
+    cameraPermissionTitle: 'Permission required',
+    cameraPermissionMsg: 'Please allow camera access.',
+    libraryPermissionTitle: 'Permission required',
+    libraryPermissionMsg: 'Please allow photo library access.',
+    camera: 'Camera',
+    gallery: 'Gallery',
   },
   fr: {
     title: 'Ajouter des photos du produit',
     subtitle: 'Téléchargez des photos claires de votre produit.',
     maxReachedTitle: 'Maximum atteint',
     maxReachedMsg: (n) => `Vous pouvez télécharger jusqu'à ${n} photos.`,
-    permissionTitle: 'Autorisation requise',
-    permissionMsg: 'Veuillez autoriser l\'accès à la galerie de photos.',
-    addPhoto: 'Ajouter une photo',
+    cameraPermissionTitle: 'Autorisation requise',
+    cameraPermissionMsg: 'Veuillez autoriser l\'accès à la caméra.',
+    libraryPermissionTitle: 'Autorisation requise',
+    libraryPermissionMsg: 'Veuillez autoriser l\'accès à la galerie de photos.',
+    camera: 'Caméra',
+    gallery: 'Galerie',
   },
 };
 
 export default function StepImages({ form, setForm, lang = 'ar' }) {
   const l = LABELS[lang] || LABELS.ar;
 
-  const pickImage = async () => {
+  const pickImageFromCamera = async () => {
     if (form.images.length >= MAX_IMAGES) {
       Alert.alert(l.maxReachedTitle, l.maxReachedMsg(MAX_IMAGES));
       return;
     }
 
-    const permission =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(l.permissionTitle, l.permissionMsg);
+      Alert.alert(l.cameraPermissionTitle, l.cameraPermissionMsg);
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setForm({
+        ...form,
+        images: [...form.images, result.assets[0].uri],
+      });
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    if (form.images.length >= MAX_IMAGES) {
+      Alert.alert(l.maxReachedTitle, l.maxReachedMsg(MAX_IMAGES));
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(l.libraryPermissionTitle, l.libraryPermissionMsg);
       return;
     }
 
@@ -131,20 +166,37 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
         ))}
 
         {form.images.length < MAX_IMAGES && (
-          <TouchableOpacity
-            style={[styles.imageBox, styles.addImage]}
-            onPress={pickImage}
-          >
-            <Ionicons
-              name="camera"
-              size={34}
-              color={COLORS.primary}
-            />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.imageBox, styles.addImage]}
+              onPress={pickImageFromCamera}
+            >
+              <Ionicons
+                name="camera"
+                size={34}
+                color={COLORS.primary}
+              />
 
-            <Text style={styles.addImageText}>
-              {l.addPhoto}
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.addImageText}>
+                {l.camera}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imageBox, styles.addImage]}
+              onPress={pickImageFromGallery}
+            >
+              <Ionicons
+                name="image"
+                size={34}
+                color={COLORS.primary}
+              />
+
+              <Text style={styles.addImageText}>
+                {l.gallery}
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
     </View>
