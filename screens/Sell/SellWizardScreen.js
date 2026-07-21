@@ -167,7 +167,13 @@ export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublishe
       onPublished ? onPublished(created) : (onBack && onBack());
     } catch (err) {
       setLoading(false);
-      Alert.alert(a.error, err.message || a.unexpected);
+      
+      // Display raw error from upload or any other stage
+      const errorMessage = err.message || a.unexpected;
+      
+      console.log('handleSubmit error:', errorMessage);
+      
+      Alert.alert(a.error, errorMessage);
     }
   };
 

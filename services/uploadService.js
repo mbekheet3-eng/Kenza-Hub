@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
-
+import { Alert } from 'react-native';
 
 /**
  * رفع صورة إلى Storage
  * bucket: product-images
+ * throws: Error with Supabase details
  */
 export async function uploadImage(file, folder = 'products') {
   console.log('START IMAGE UPLOAD');
@@ -13,7 +14,7 @@ export async function uploadImage(file, folder = 'products') {
   try {
     if (!file) {
       console.log('UPLOAD FAILED: no file object received');
-      return null;
+      throw new Error('No file object received');
     }
 
     console.log('FILE OBJECT:', JSON.stringify(file, null, 2));
@@ -24,7 +25,6 @@ export async function uploadImage(file, folder = 'products') {
     console.log('FILE EXT:', fileExt);
     console.log('FILE PATH:', filePath);
     console.log('CONTENT TYPE:', file.mimeType || 'image/jpeg');
-
 
     // تحويل الصورة إلى Blob
     const response = await fetch(file.uri);
@@ -40,7 +40,6 @@ export async function uploadImage(file, folder = 'products') {
         upsert: false,
       });
 
-
     if (error) {
       console.log('UPLOAD FAILED:');
       console.log('  message:', error.message);
@@ -48,7 +47,18 @@ export async function uploadImage(file, folder = 'products') {
       console.log('  details:', error.details);
       console.log('  hint:', error.hint);
       console.log('  full error object:', JSON.stringify(error));
-      throw error;
+      
+      // Create detailed error message to throw
+      const errorDetails = {
+        message: error.message,
+        statusCode: error.statusCode,
+        details: error.details,
+        hint: error.hint,
+      };
+      
+      const err = new Error(JSON.stringify(errorDetails, null, 2));
+      err.supabaseError = error;
+      throw err;
     }
 
     console.log('UPLOAD SUCCESS:', filePath);
@@ -57,18 +67,18 @@ export async function uploadImage(file, folder = 'products') {
       .from('product-images')
       .getPublicUrl(filePath);
 
-
     return data.publicUrl;
 
   } catch (error) {
     console.log('UPLOAD FAILED (catch):', error.message);
-    return null;
+    // Re-throw the error so caller can handle it
+    throw error;
   }
 }
 
-
 /**
  * رفع مجموعة صور
+ * throws: Error from first failed upload, or from uploadImage
  */
 export async function uploadMultipleImages(images = []) {
   try {
@@ -86,10 +96,10 @@ export async function uploadMultipleImages(images = []) {
 
   } catch (error) {
     console.log('uploadMultipleImages error:', error.message);
-    return [];
+    // Re-throw the error so handleSubmit can catch and display it
+    throw error;
   }
 }
-
 
 /**
  * حذف صورة من Storage
@@ -98,22 +108,17 @@ export async function deleteImage(url) {
   try {
     if (!url) return false;
 
-
     const path = url.split('/product-images/')[1];
 
     if (!path) return false;
-
 
     const { error } = await supabase.storage
       .from('product-images')
       .remove([path]);
 
-
     if (error) throw error;
 
-
     return true;
-
 
   } catch (error) {
     console.log('deleteImage error:', error.message);
