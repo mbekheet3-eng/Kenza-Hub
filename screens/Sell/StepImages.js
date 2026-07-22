@@ -4,57 +4,109 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
+  Image,
   Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+
 import styles from './SellStyles';
-import { COLORS } from '../../theme/colors';
 import { MAX_IMAGES } from './constants';
 
 const LABELS = {
   ar: {
-    title: 'ضيف صور المنتج',
-    subtitle: 'ارفع صور واضحة للمنتج بتاعك.',
-    maxReachedTitle: 'وصلت للحد الأقصى',
-    maxReachedMsg: (n) => `تقدر ترفع لغاية ${n} صور.`,
-    cameraPermissionTitle: 'محتاجين إذن',
-    cameraPermissionMsg: 'من فضلك اسمح بالوصول للكاميرا.',
-    libraryPermissionTitle: 'محتاجين إذن',
-    libraryPermissionMsg: 'من فضلك اسمح بالوصول لمعرض الصور.',
+    title: 'صور المنتج',
+    subtitle: 'اختار صورة من الكاميرا أو المعرض.',
     camera: 'كاميرا',
     gallery: 'معرض',
+    maxReachedTitle: 'الحد الأقصى من الصور',
+    maxReachedMsg: (max) => `أنت وصلت لـ ${max} صور.`,
+    cameraPermission: 'احنا محتاجين نوصل للكاميرا عشان تصور المنتج',
+    galleryPermission: 'احنا محتاجين نوصل لصورك عشان تضيف صور المنتج',
+    permissionDenied: 'تم رفض الإذن.',
+    copyFailed: 'فشل نسخ الصورة.',
   },
   en: {
-    title: 'Add Product Photos',
-    subtitle: 'Upload clear images of your product.',
-    maxReachedTitle: 'Maximum reached',
-    maxReachedMsg: (n) => `You can upload up to ${n} images.`,
-    cameraPermissionTitle: 'Permission required',
-    cameraPermissionMsg: 'Please allow camera access.',
-    libraryPermissionTitle: 'Permission required',
-    libraryPermissionMsg: 'Please allow photo library access.',
+    title: 'Product Photos',
+    subtitle: 'Select photos from camera or gallery.',
     camera: 'Camera',
     gallery: 'Gallery',
+    maxReachedTitle: 'Max Photos Reached',
+    maxReachedMsg: (max) => `You have reached ${max} photos.`,
+    cameraPermission: 'We need camera access to take photos.',
+    galleryPermission: 'We need access to your photos.',
+    permissionDenied: 'Permission was denied.',
+    copyFailed: 'Failed to copy photo.',
   },
   fr: {
-    title: 'Ajouter des photos du produit',
-    subtitle: 'Téléchargez des photos claires de votre produit.',
-    maxReachedTitle: 'Maximum atteint',
-    maxReachedMsg: (n) => `Vous pouvez télécharger jusqu'à ${n} photos.`,
-    cameraPermissionTitle: 'Autorisation requise',
-    cameraPermissionMsg: 'Veuillez autoriser l\'accès à la caméra.',
-    libraryPermissionTitle: 'Autorisation requise',
-    libraryPermissionMsg: 'Veuillez autoriser l\'accès à la galerie de photos.',
+    title: 'Photos du produit',
+    subtitle: 'Sélectionnez des photos depuis la caméra ou la galerie.',
     camera: 'Caméra',
     gallery: 'Galerie',
+    maxReachedTitle: 'Maximum de photos atteint',
+    maxReachedMsg: (max) => `Vous avez atteint ${max} photos.`,
+    cameraPermission: 'Nous avons besoin d\'accéder à la caméra.',
+    galleryPermission: 'Nous avons besoin d\'accéder à vos photos.',
+    permissionDenied: 'Permission refusée.',
+    copyFailed: 'Échec de la copie de la photo.',
   },
 };
 
-export default function StepImages({ form, setForm, lang = 'ar' }) {
+/**
+ * Copy image from content:// or file:// URI to local cache directory
+ * Returns full asset object with localUri
+ */
+async function copyImageToCache(asset) {
+  try {
+    // Create cache uploads directory if it doesn't exist
+    const cacheDir = FileSystem.cacheDirectory + 'uploads/';
+    const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+    }
+
+    // Generate unique local filename
+    const timestamp = Date.now();
+    const filename = `image_${timestamp}.jpg`;
+    const localUri = cacheDir + filename;
+
+    // Copy file from original URI to cache
+    await FileSystem.copyAsync({
+      from: asset.uri,
+      to: localUri,
+    });
+
+    // Verify the file was copied successfully
+    const fileInfo = await FileSystem.getInfoAsync(localUri);
+    if (!fileInfo.exists) {
+      throw new Error('File copy verification failed');
+    }
+
+    // Return complete asset with localUri
+    return {
+      uri: asset.uri,  // Original URI (for reference)
+      localUri: localUri,  // Local cache URI (for upload)
+      mimeType: asset.mimeType,
+      fileName: asset.fileName,
+      fileSize: asset.fileSize,
+      type: asset.type,
+      assetId: asset.assetId,
+      width: asset.width,
+      height: asset.height,
+    };
+  } catch (error) {
+    console.log('copyImageToCache error:', error.message);
+    throw error;
+  }
+}
+
+export default function StepImages({
+  form,
+  setForm,
+  lang = 'ar',
+}) {
   const l = LABELS[lang] || LABELS.ar;
 
   const pickImageFromCamera = async () => {
@@ -64,9 +116,8 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
     }
 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-
     if (!permission.granted) {
-      Alert.alert(l.cameraPermissionTitle, l.cameraPermissionMsg);
+      Alert.alert(l.permissionDenied, l.cameraPermission);
       return;
     }
 
@@ -77,10 +128,16 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
     });
 
     if (!result.canceled) {
-      setForm({
-        ...form,
-        images: [...form.images, result.assets[0].uri],
-      });
+      try {
+        const asset = await copyImageToCache(result.assets[0]);
+        setForm({
+          ...form,
+          images: [...form.images, asset],
+        });
+      } catch (error) {
+        Alert.alert('Error', l.copyFailed);
+        console.log('Camera image copy failed:', error.message);
+      }
     }
   };
 
@@ -91,9 +148,8 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
     }
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (!permission.granted) {
-      Alert.alert(l.libraryPermissionTitle, l.libraryPermissionMsg);
+      Alert.alert(l.permissionDenied, l.galleryPermission);
       return;
     }
 
@@ -104,17 +160,30 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
     });
 
     if (!result.canceled) {
-      setForm({
-        ...form,
-        images: [...form.images, result.assets[0].uri],
-      });
+      try {
+        const asset = await copyImageToCache(result.assets[0]);
+        setForm({
+          ...form,
+          images: [...form.images, asset],
+        });
+      } catch (error) {
+        Alert.alert('Error', l.copyFailed);
+        console.log('Gallery image copy failed:', error.message);
+      }
     }
   };
 
   const removeImage = (index) => {
     const images = [...form.images];
-    images.splice(index, 1);
+    const removed = images[index];
 
+    // Attempt to delete local cache file (idempotent)
+    if (removed.localUri) {
+      FileSystem.deleteAsync(removed.localUri, { idempotent: true })
+        .catch((err) => console.log('Failed to delete cached image:', err.message));
+    }
+
+    images.splice(index, 1);
     setForm({
       ...form,
       images,
@@ -122,7 +191,7 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
   };
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <Text style={styles.sectionTitle}>
         {l.title}
       </Text>
@@ -131,74 +200,69 @@ export default function StepImages({ form, setForm, lang = 'ar' }) {
         {l.subtitle}
       </Text>
 
+      <View style={[styles.row, { marginBottom: 20 }]}>
+        <TouchableOpacity
+          style={styles.chip}
+          onPress={pickImageFromCamera}
+        >
+          <Text style={styles.chipText}>
+            📷 {l.camera}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.chip}
+          onPress={pickImageFromGallery}
+        >
+          <Text style={styles.chipText}>
+            🖼️ {l.gallery}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 20 }}
       >
-        {form.images.map((uri, index) => (
-          <View
-            key={index}
-            style={styles.imageBox}
-          >
+        {form.images.map((image, index) => (
+          <View key={index} style={{ marginRight: 10, position: 'relative' }}>
             <Image
-              source={{ uri }}
-              style={styles.image}
+              source={{ uri: image.localUri }}
+              style={{
+                width: 90,
+                height: 90,
+                borderRadius: 10,
+              }}
             />
 
             <TouchableOpacity
-              onPress={() => removeImage(index)}
               style={{
                 position: 'absolute',
-                top: 6,
-                right: 6,
-                backgroundColor: '#fff',
-                borderRadius: 12,
-                padding: 2,
+                top: 5,
+                right: 5,
+                backgroundColor: 'rgba(255, 0, 0, 0.7)',
+                borderRadius: 50,
+                width: 24,
+                height: 24,
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
+              onPress={() => removeImage(index)}
             >
-              <Ionicons
-                name="close-circle"
-                size={22}
-                color="red"
-              />
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+                ×
+              </Text>
             </TouchableOpacity>
           </View>
         ))}
-
-        {form.images.length < MAX_IMAGES && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity
-              style={[styles.imageBox, styles.addImage]}
-              onPress={pickImageFromCamera}
-            >
-              <Ionicons
-                name="camera"
-                size={34}
-                color={COLORS.primary}
-              />
-
-              <Text style={styles.addImageText}>
-                {l.camera}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.imageBox, styles.addImage]}
-              onPress={pickImageFromGallery}
-            >
-              <Ionicons
-                name="image"
-                size={34}
-                color={COLORS.primary}
-              />
-
-              <Text style={styles.addImageText}>
-                {l.gallery}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </ScrollView>
+
+      {form.images.length < MAX_IMAGES && (
+        <Text style={styles.subtitle}>
+          {form.images.length}/{MAX_IMAGES}
+        </Text>
+      )}
     </View>
   );
 }

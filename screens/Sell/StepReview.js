@@ -83,10 +83,10 @@ export default function StepReview({ form, lang = 'ar' }) {
         showsHorizontalScrollIndicator={false}
         style={{ marginBottom: 20 }}
       >
-        {form.images.map((uri, index) => (
+        {form.images.map((image, index) => (
           <Image
             key={index}
-            source={{ uri }}
+            source={{ uri: image.localUri }}
             style={{
               width: 90,
               height: 90,
