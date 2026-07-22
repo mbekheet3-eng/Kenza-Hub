@@ -163,9 +163,9 @@ export default function SellWizardScreen({ lang = 'ar', user, onBack, onPublishe
       // 1) لازم يكون عنده seller_profile — لو مفيش، بينشئ واحد تلقائيًا
       const sellerProfileId = await getOrCreateSellerProfileId(user);
 
-      // 2) form.images الآن عبارة عن مصفوفة من الـ assets الكاملة (مش URIs فقط)
-      // تمريرها كما هي إلى uploadMultipleImages
-      const uploadedUrls = await uploadMultipleImages(form.images);
+      // 2) form.images عبارة عن مصفوفة من الـ Asset objects مع localUri
+      const imageAssets = form.images;
+      const uploadedUrls = await uploadMultipleImages(imageAssets);
 
       if (uploadedUrls.length === 0) {
         Alert.alert(a.error, a.uploadFailed);

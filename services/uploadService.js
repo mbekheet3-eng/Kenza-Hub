@@ -3,193 +3,189 @@ import * as FileSystem from 'expo-file-system';
 
 /**
  * Extract file extension from MIME type
- * Fallback chain: mimeType → fileName → jpg
+ * Priority: mimeType → fileName → default 'jpg'
  */
-function getFileExtensionFromAsset(asset) {
+function getFileExtension(mimeType, fileName) {
   // Priority 1: Extract from mimeType
-  if (asset.mimeType) {
-    const mimeExt = {
+  if (mimeType) {
+    const mimeMap = {
       'image/jpeg': 'jpg',
       'image/jpg': 'jpg',
       'image/png': 'png',
-      'image/gif': 'gif',
       'image/webp': 'webp',
+      'image/gif': 'gif',
       'image/heic': 'heic',
       'image/heif': 'heif',
-    }[asset.mimeType];
+      'image/bmp': 'bmp',
+      'image/tiff': 'tiff',
+    };
 
-    if (mimeExt) {
-      return mimeExt;
-    }
+    const ext = mimeMap[mimeType.toLowerCase()];
+    if (ext) return ext;
   }
 
   // Priority 2: Extract from fileName
-  if (asset.fileName) {
-    const parts = asset.fileName.split('.');
-    if (parts.length > 1) {
-      return parts[parts.length - 1].toLowerCase();
+  if (fileName) {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext && ext.length > 0 && ext.length < 10) {
+      return ext;
     }
   }
 
-  // Priority 3: Default to jpg
+  // Priority 3: Default
   return 'jpg';
 }
 
 /**
- * رفع صورة إلى Storage - استخدام localUri + metadata
+ * رفع صورة إلى Storage
  * bucket: product-images
- * throws: Error with formatted Supabase details
+ * Uses localUri (cached file copy)
+ * Cleans up local cache after successful upload
  */
-export async function uploadImage(asset, folder = 'products') {
+export async function uploadImage(file, folder = 'products') {
   console.log('========== IMAGE UPLOAD START ==========');
 
-  // STEP 1: Log asset object
+  // STEP 1: Log asset details
   try {
-    console.log('[STEP 1] Asset object received');
+    console.log('[STEP 1] Asset object');
     console.log({
-      uri: asset?.uri,
-      localUri: asset?.localUri,
-      mimeType: asset?.mimeType,
-      fileName: asset?.fileName,
-      fileSize: asset?.fileSize,
+      uri: file?.uri,
+      localUri: file?.localUri,
+      mimeType: file?.mimeType,
+      fileName: file?.fileName,
+      fileSize: file?.fileSize,
     });
 
-    if (!asset || !asset.localUri) {
-      throw new Error('No localUri in asset object');
+    if (!file || !file.localUri) {
+      throw new Error('No localUri provided');
     }
   } catch (error) {
     console.log('[STEP 1 ERROR]', error.message);
     throw error;
   }
 
-  // STEP 2: Verify file exists at localUri
   try {
-    console.log('[STEP 2] Checking if local file exists');
-    const fileInfo = await FileSystem.getInfoAsync(asset.localUri);
-
+    // STEP 2: Verify local file exists
+    console.log('[STEP 2] Verifying local file exists');
+    const fileInfo = await FileSystem.getInfoAsync(file.localUri);
+    
     if (!fileInfo.exists) {
-      throw new Error(`File does not exist at ${asset.localUri}`);
+      throw new Error(`Local file does not exist: ${file.localUri}`);
     }
 
-    console.log('[STEP 2 SUCCESS] File exists');
-    console.log({
-      fileSize: fileInfo.size,
-      isDirectory: fileInfo.isDirectory,
+    console.log('[STEP 2 SUCCESS]', {
+      exists: fileInfo.exists,
+      size: fileInfo.size,
     });
-  } catch (error) {
-    console.log('[STEP 2 ERROR]', error.message);
-    throw error;
-  }
 
-  // STEP 3: Extract file extension using fallback chain
-  try {
+    // STEP 3: Extract file extension (mimeType → fileName → jpg)
     console.log('[STEP 3] Extracting file extension');
-    const fileExt = getFileExtensionFromAsset(asset);
-    console.log('[STEP 3 SUCCESS]', { fileExt });
-
-    const fileName = `${Date.now()}.${fileExt}`;
+    const fileExt = getFileExtension(file.mimeType, file.fileName);
+    const timestamp = Date.now();
+    const fileName = `${timestamp}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
-    const contentType = asset.mimeType || 'image/jpeg';
 
-    console.log('[STEP 3] File parameters:');
-    console.log({
-      filePath,
-      contentType,
-      sourceUri: asset.localUri,
+    console.log('[STEP 3 SUCCESS]', {
+      mimeType: file.mimeType,
+      fileName: file.fileName,
+      extractedExt: fileExt,
+      filePath: filePath,
     });
 
     // STEP 4: Read file as base64
     console.log('[STEP 4] Reading file as base64');
-    const base64Data = await FileSystem.readAsStringAsync(asset.localUri, {
+    const base64Data = await FileSystem.readAsStringAsync(file.localUri, {
       encoding: FileSystem.EncodingType.Base64,
     });
 
-    console.log('[STEP 4 SUCCESS]');
-    console.log({
+    console.log('[STEP 4 SUCCESS]', {
       base64Length: base64Data.length,
     });
 
-    // STEP 5: Convert base64 to Blob
-    console.log('[STEP 5] Creating Blob from base64');
-    const blobResponse = await fetch(`data:${contentType};base64,${base64Data}`);
+    // STEP 5: Create Blob
+    console.log('[STEP 5] Creating Blob');
+    const contentType = file.mimeType || 'image/jpeg';
+    const blobResponse = await fetch(
+      `data:${contentType};base64,${base64Data}`
+    );
     const blob = await blobResponse.blob();
 
-    console.log('[STEP 5 SUCCESS]');
-    console.log({
+    console.log('[STEP 5 SUCCESS]', {
       blobSize: blob.size,
       blobType: blob.type,
     });
 
-    // STEP 6: Before upload to Supabase
-    console.log('[STEP 6] Before supabase.storage.upload()');
+    // STEP 6: Upload to Supabase Storage
+    console.log('[STEP 6] Uploading to Supabase Storage');
     console.log({
       bucket: 'product-images',
-      filePath,
-      contentType,
+      filePath: filePath,
+      contentType: contentType,
       upsert: false,
       blobSize: blob.size,
     });
 
-    // STEP 7: Upload to Supabase Storage
-    console.log('[STEP 7] Calling supabase.storage.upload()...');
-    const uploadResult = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('product-images')
       .upload(filePath, blob, {
-        contentType,
+        contentType: contentType,
         upsert: false,
       });
 
-    console.log('[STEP 7] After upload()');
+    // STEP 7: Check upload result
+    console.log('[STEP 7] Upload response');
     console.log({
-      data: uploadResult.data,
-      error: uploadResult.error,
+      data: data,
+      error: error,
     });
 
-    if (uploadResult.error) {
-      console.log('[STEP 7 ERROR] Upload failed');
+    if (error) {
+      console.log('[STEP 7 ERROR] Supabase upload failed');
       console.log({
-        message: uploadResult.error.message,
-        statusCode: uploadResult.error.statusCode,
-        error: uploadResult.error.error,
-        details: uploadResult.error.details,
-        hint: uploadResult.error.hint,
+        message: error.message,
+        statusCode: error.statusCode,
+        error: error.error,
+        details: error.details,
+        hint: error.hint,
       });
 
       const err = new Error();
       err.uploadError = {
-        message: uploadResult.error.message,
-        statusCode: uploadResult.error.statusCode,
-        error: uploadResult.error.error,
-        details: uploadResult.error.details,
-        hint: uploadResult.error.hint,
+        message: error.message,
+        statusCode: error.statusCode,
+        error: error.error,
+        details: error.details,
+        hint: error.hint,
       };
       throw err;
     }
 
-    // Get public URL
-    const { data } = supabase.storage
+    // STEP 8: Get public URL
+    console.log('[STEP 8] Getting public URL');
+    const { data: urlData } = supabase.storage
       .from('product-images')
       .getPublicUrl(filePath);
 
-    console.log('[STEP 8] Upload successful, cleaning up cache');
-    const publicUrl = data.publicUrl;
+    console.log('[STEP 8 SUCCESS]', {
+      publicUrl: urlData.publicUrl,
+    });
 
-    // STEP 8: Delete local cache file
+    // STEP 9: Clean up local cache file
+    console.log('[STEP 9] Cleaning up local cache file');
     try {
-      await FileSystem.deleteAsync(asset.localUri, { idempotent: true });
-      console.log('[STEP 8 SUCCESS] Local cache file deleted');
-    } catch (deleteError) {
-      console.log('[STEP 8 WARNING] Failed to delete cache file:', deleteError.message);
-      // Don't fail the upload if cache deletion fails
+      await FileSystem.deleteAsync(file.localUri, { idempotent: true });
+      console.log('[STEP 9 SUCCESS] Local file deleted');
+    } catch (deleteErr) {
+      console.log('[STEP 9 WARNING] Failed to delete local file:', deleteErr.message);
+      // Don't throw - upload succeeded, just couldn't clean up
     }
 
     console.log('========== IMAGE UPLOAD END (SUCCESS) ==========');
-    return publicUrl;
+    return urlData.publicUrl;
 
   } catch (error) {
     console.log('========== IMAGE UPLOAD END (ERROR) ==========');
-    console.log('[EXCEPTION]');
-    console.log({
+    console.log('[EXCEPTION]', {
       errorMessage: error.message,
       errorStack: error.stack,
       errorName: error.name,
@@ -201,18 +197,17 @@ export async function uploadImage(asset, folder = 'products') {
 
 /**
  * رفع مجموعة صور
- * throws: Error from first failed upload
  */
-export async function uploadMultipleImages(assets = []) {
+export async function uploadMultipleImages(images = []) {
   console.log('========== UPLOAD MULTIPLE START ==========');
-  console.log('Total images to upload:', assets.length);
+  console.log('Total images to upload:', images.length);
 
   try {
     const uploadedImages = [];
 
-    for (let i = 0; i < assets.length; i++) {
-      console.log(`\n--- Uploading image ${i + 1}/${assets.length} ---`);
-      const url = await uploadImage(assets[i]);
+    for (let i = 0; i < images.length; i++) {
+      console.log(`\n--- Uploading image ${i + 1}/${images.length} ---`);
+      const url = await uploadImage(images[i]);
 
       if (url) {
         uploadedImages.push(url);
@@ -226,10 +221,7 @@ export async function uploadMultipleImages(assets = []) {
 
   } catch (error) {
     console.log('========== UPLOAD MULTIPLE END (ERROR) ==========');
-    console.log({
-      errorMessage: error.message,
-      errorStack: error.stack,
-    });
+    console.log('Upload failed:', error.message);
     throw error;
   }
 }
