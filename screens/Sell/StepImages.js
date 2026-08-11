@@ -57,13 +57,24 @@ const LABELS = {
 /**
  * Copy image from content:// or file:// URI to local cache directory
  * Returns full asset object with localUri
+ * 
+ * On Android: Uses FileSystem.cacheDirectory
+ * On iOS: Uses FileSystem.cacheDirectory
  */
 async function copyImageToCache(asset) {
   try {
     // Create cache uploads directory if it doesn't exist
+    // FileSystem.cacheDirectory is app-specific, so safe to use
     const cacheDir = FileSystem.cacheDirectory + 'uploads/';
+    
+    console.log('[copyImageToCache] Cache directory:', cacheDir);
+    console.log('[copyImageToCache] Original URI:', asset.uri);
+    
     const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+    console.log('[copyImageToCache] Directory exists:', dirInfo.exists);
+    
     if (!dirInfo.exists) {
+      console.log('[copyImageToCache] Creating directory...');
       await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
     }
 
@@ -71,6 +82,8 @@ async function copyImageToCache(asset) {
     const timestamp = Date.now();
     const filename = `image_${timestamp}.jpg`;
     const localUri = cacheDir + filename;
+
+    console.log('[copyImageToCache] Copying to:', localUri);
 
     // Copy file from original URI to cache
     await FileSystem.copyAsync({
@@ -80,6 +93,11 @@ async function copyImageToCache(asset) {
 
     // Verify the file was copied successfully
     const fileInfo = await FileSystem.getInfoAsync(localUri);
+    console.log('[copyImageToCache] File verification:', {
+      exists: fileInfo.exists,
+      size: fileInfo.size,
+    });
+    
     if (!fileInfo.exists) {
       throw new Error('File copy verification failed');
     }
@@ -87,7 +105,7 @@ async function copyImageToCache(asset) {
     // Return complete asset with localUri
     return {
       uri: asset.uri,  // Original URI (for reference)
-      localUri: localUri,  // Local cache URI (for upload)
+      localUri: localUri,  // Local cache URI (for upload) ✅ USE THIS
       mimeType: asset.mimeType,
       fileName: asset.fileName,
       fileSize: asset.fileSize,
@@ -97,7 +115,7 @@ async function copyImageToCache(asset) {
       height: asset.height,
     };
   } catch (error) {
-    console.log('copyImageToCache error:', error.message);
+    console.log('[copyImageToCache] Error:', error.message);
     throw error;
   }
 }
@@ -177,11 +195,13 @@ export default function StepImages({
     const images = [...form.images];
     const removed = images[index];
 
-    // Attempt to delete local cache file (idempotent)
-    if (removed.localUri) {
-      FileSystem.deleteAsync(removed.localUri, { idempotent: true })
-        .catch((err) => console.log('Failed to delete cached image:', err.message));
-    }
+    // ⚠️ IMPORTANT: Don't delete the local file immediately!
+    // The file might still be uploading. Mark it as removed instead.
+    // The file will be cleaned up by uploadService after successful upload,
+    // or by OS cache cleanup if app is closed.
+    
+    // Only log for debugging
+    console.log('[removeImage] Marked for deletion (not deleting yet):', removed.localUri);
 
     images.splice(index, 1);
     setForm({

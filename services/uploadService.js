@@ -122,10 +122,19 @@ export async function uploadImage(file, folder = 'products') {
   try {
     // STEP 2: Verify local file exists
     console.log('[STEP 2] Verifying local file exists');
+    console.log('[STEP 2] Checking localUri:', file.localUri);
+    
     const fileInfo = await FileSystem.getInfoAsync(file.localUri);
     
+    console.log('[STEP 2] File info:', {
+      exists: fileInfo.exists,
+      isDirectory: fileInfo.isDirectory,
+      size: fileInfo.size,
+      modificationTime: fileInfo.modificationTime,
+    });
+    
     if (!fileInfo.exists) {
-      throw new Error(`Local file does not exist: ${file.localUri}`);
+      throw new Error(`LOCAL_FILE_DELETED: File was deleted before upload. Path: ${file.localUri}`);
     }
 
     console.log('[STEP 2 SUCCESS]', {
