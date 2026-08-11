@@ -14,7 +14,9 @@ const PRODUCT_IMAGES = [
 const IMAGE_WIDTH = 148;
 const SCROLL_WIDTH = PRODUCT_IMAGES.length * IMAGE_WIDTH;
 
-// كومبوننت صغير بيحاول يحمّل الصورة تاني تلقائي لو فشلت
+/**
+ * كومبوننت صغير بيحاول يحمّل الصورة تاني تلقائي لو فشلت
+ */
 function RetryImage({ uri, style }) {
   const [attempt, setAttempt] = useState(0);
   const maxRetries = 3;
@@ -38,27 +40,32 @@ export default function HeroCarousel() {
   const scrollAnim2 = useRef(new Animated.Value(-SCROLL_WIDTH)).current;
 
   useEffect(() => {
-    const animate = () => {
-      scrollAnim1.setValue(0);
+    // ✅ Scroll من اليمين لليسار (يتحرك لليسار)
+    const animation1 = Animated.loop(
       Animated.timing(scrollAnim1, {
         toValue: -SCROLL_WIDTH,
-        duration: 30000,
+        duration: 30000,  // 30 ثانية
         useNativeDriver: true,
-      }).start(() => animate());
-    };
-    animate();
+      })
+    );
+    animation1.start();
+
+    return () => animation1.stop();
   }, [scrollAnim1]);
 
   useEffect(() => {
-    const animate = () => {
-      scrollAnim2.setValue(-SCROLL_WIDTH);
+    // ✅ Scroll من اليسار لليمين (يتحرك لليمين)
+    // بدأ من -SCROLL_WIDTH وتحرك لـ 0، بعدين الـ loop بيعيده لـ -SCROLL_WIDTH وتاني
+    const animation2 = Animated.loop(
       Animated.timing(scrollAnim2, {
         toValue: 0,
-        duration: 30000,
+        duration: 30000,  // 30 ثانية
         useNativeDriver: true,
-      }).start(() => animate());
-    };
-    animate();
+      })
+    );
+    animation2.start();
+
+    return () => animation2.stop();
   }, [scrollAnim2]);
 
   const renderImages = (images) => (
@@ -89,24 +96,24 @@ export default function HeroCarousel() {
 }
 
 const styles = StyleSheet.create({
-gridSection: {
-  flex: 1.2,
-  backgroundColor: COLORS.white,
-  justifyContent: 'center',
-  paddingVertical: 6,      // كان 10
-},
+  gridSection: {
+    flex: 1.2,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
 
-scrollRow: {
-  height: 170,             // كان 180
-  marginVertical: 6,
-  overflow: 'hidden',
-},
+  scrollRow: {
+    height: 170,
+    marginVertical: 6,
+    overflow: 'hidden',
+  },
 
-scrollImage: {
-  width: 140,
-  height: 170,             // كان 180
-  marginRight: 8,
-  borderRadius: 12,
-  backgroundColor: COLORS.lightGray,
-},
+  scrollImage: {
+    width: 140,
+    height: 170,
+    marginRight: 8,
+    borderRadius: 12,
+    backgroundColor: COLORS.lightGray,
+  },
 });

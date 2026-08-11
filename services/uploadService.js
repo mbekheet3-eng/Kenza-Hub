@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import * as FileSystem from 'expo-file-system';
+import * as Network from 'expo-network';
 
 /**
  * Extract file extension from MIME type
@@ -42,8 +43,62 @@ function getFileExtension(mimeType, fileName) {
  * Uses localUri (cached file copy)
  * Cleans up local cache after successful upload
  */
+/**
+ * Check network connectivity before upload
+ */
+async function checkNetworkConnectivity() {
+  try {
+    const { isConnected } = await Network.getNetworkStateAsync();
+    console.log('[NETWORK CHECK]', { isConnected });
+    
+    if (!isConnected) {
+      throw new Error('NO_INTERNET: No internet connection available');
+    }
+    
+    return true;
+  } catch (err) {
+    console.log('[NETWORK CHECK ERROR]', err.message);
+    throw new Error(`Network check failed: ${err.message}`);
+  }
+}
+
+/**
+ * DIAGNOSTIC: Check if file has localUri before upload
+ */
+function validateFileObject(file) {
+  console.log('[DIAGNOSTIC] File object validation:');
+  console.log({
+    hasUri: !!file?.uri,
+    hasLocalUri: !!file?.localUri,
+    hasMimeType: !!file?.mimeType,
+    hasFileName: !!file?.fileName,
+    fileSize: file?.fileSize,
+  });
+
+  if (!file?.localUri) {
+    console.log('[DIAGNOSTIC ERROR] ⚠️ Missing localUri! This is the root cause!');
+    console.log('File object keys:', Object.keys(file || {}));
+    console.log('StepImages.copyImageToCache might not have been called');
+    return false;
+  }
+  return true;
+}
+
 export async function uploadImage(file, folder = 'products') {
   console.log('========== IMAGE UPLOAD START ==========');
+
+  // Pre-check 0: Network connectivity
+  try {
+    await checkNetworkConnectivity();
+  } catch (netErr) {
+    console.log('[STEP 0 ERROR]', netErr.message);
+    throw netErr;
+  }
+
+  // Pre-check: Validate file has localUri
+  if (!validateFileObject(file)) {
+    throw new Error('FILE_MISSING_LOCAL_URI: Check StepImages.copyImageToCache was called');
+  }
 
   // STEP 1: Log asset details
   try {
@@ -115,7 +170,7 @@ export async function uploadImage(file, folder = 'products') {
       blobType: blob.type,
     });
 
-    // STEP 6: Upload to Supabase Storage
+    // STEP 6: Upload to Supabase Storage (with retry)
     console.log('[STEP 6] Uploading to Supabase Storage');
     console.log({
       bucket: 'product-images',
@@ -125,12 +180,51 @@ export async function uploadImage(file, folder = 'products') {
       blobSize: blob.size,
     });
 
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, blob, {
-        contentType: contentType,
-        upsert: false,
-      });
+    let data, error;
+    let retries = 3;
+    let lastError = null;
+
+    while (retries > 0) {
+      try {
+        console.log(`[STEP 6] Upload attempt (${4 - retries}/3)`);
+        
+        const uploadPromise = supabase.storage
+          .from('product-images')
+          .upload(filePath, blob, {
+            contentType: contentType,
+            upsert: false,
+          });
+
+        // Add timeout (30 seconds)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Upload timeout after 30s')), 30000)
+        );
+
+        const result = await Promise.race([uploadPromise, timeoutPromise]);
+        data = result.data;
+        error = result.error;
+        
+        if (!error) {
+          console.log('[STEP 6 SUCCESS] Upload completed');
+          break;
+        } else {
+          throw new Error(error.message || 'Upload failed');
+        }
+      } catch (err) {
+        lastError = err;
+        retries--;
+        console.log(`[STEP 6 RETRY] Failed: ${err.message}, Retries left: ${retries}`);
+        
+        if (retries > 0) {
+          // Wait before retry (exponential backoff)
+          const waitTime = (3 - retries) * 2000; // 2s, 4s
+          console.log(`[STEP 6] Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          error = lastError;
+        }
+      }
+    }
 
     // STEP 7: Check upload result
     console.log('[STEP 7] Upload response');
